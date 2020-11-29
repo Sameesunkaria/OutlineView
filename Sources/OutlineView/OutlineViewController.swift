@@ -18,7 +18,8 @@ public class OutlineViewController<Item: Identifiable & Hashable>: NSViewControl
     init(
         items: [Item],
         children: KeyPath<Item, [Item]?>,
-        rowContent: @escaping (Item) -> NSView
+        rowContent: @escaping (Item) -> NSView,
+        selectionChanged: @escaping (Item?) -> Void
     ) {
         scrollView.documentView = outlineView
         scrollView.hasVerticalScroller = true
@@ -34,7 +35,7 @@ public class OutlineViewController<Item: Identifiable & Hashable>: NSViewControl
         outlineView.addTableColumn(col)
 
         dataSource = OutlineViewDataSource(items: items, children: children)
-        delegate = OutlineViewDelegate(rowContent: rowContent)
+        delegate = OutlineViewDelegate(rowContent: rowContent, selectionChanged: selectionChanged)
         outlineView.dataSource = dataSource
         outlineView.delegate = delegate
 
