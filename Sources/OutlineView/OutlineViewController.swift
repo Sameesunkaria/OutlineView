@@ -70,6 +70,8 @@ public class OutlineViewController<Item: Identifiable & Hashable>: NSViewControl
         let diff = newValue.difference(from: dataSource.items, by: { $0.id == $1.id }).inferringMoves()
 
         outlineView.beginUpdates()
+        dataSource.items = newValue
+
         for change in diff {
             if case let .remove(offset, _, _) = change {
                 outlineView.removeItems(at: IndexSet([offset]), inParent: nil, withAnimation: .effectFade)
@@ -79,13 +81,14 @@ public class OutlineViewController<Item: Identifiable & Hashable>: NSViewControl
             }
         }
 
-        dataSource.items = newValue
         outlineView.endUpdates()
 
         // Workaround layout issues with the first row.
         // It does not seem to adjust its height correctly based on the autolayout constraints.
         if !dataSource.items.isEmpty {
-            outlineView.noteHeightOfRows(withIndexesChanged: IndexSet([0]))
+            if outlineView.rows(in: outlineView.visibleRect).contains(0) {
+                outlineView.noteHeightOfRows(withIndexesChanged: IndexSet([0]))
+            }
         }
     }
 }
