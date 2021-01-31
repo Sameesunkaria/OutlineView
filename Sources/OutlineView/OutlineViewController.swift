@@ -1,19 +1,13 @@
-//
-//  OutlineViewController.swift
-//  
-//
-//  Created by Samar Sunkaria on 11/21/20.
-//
-
 import Cocoa
-import SwiftUI
 
-public class OutlineViewController<Item: Identifiable & Hashable>: NSViewController {
+public class OutlineViewController<Item: Identifiable>: NSViewController {
     let outlineView = NSOutlineView()
     let scrollView = NSScrollView(frame: NSRect(x: 0, y: 0, width: 400, height: 400))
     
     let dataSource: OutlineViewDataSource<Item>
     let delegate: OutlineViewDelegate<Item>
+
+    let childrenPath: KeyPath<Item, [Item]?>
 
     init(
         items: [Item],
@@ -30,14 +24,19 @@ public class OutlineViewController<Item: Identifiable & Hashable>: NSViewControl
         outlineView.headerView = nil
         outlineView.usesAutomaticRowHeights = true
         outlineView.selectionHighlightStyle = .sourceList
+        outlineView.columnAutoresizingStyle = .uniformColumnAutoresizingStyle
 
-        let col = NSTableColumn()
-        outlineView.addTableColumn(col)
+        let onlyColumn = NSTableColumn()
+        onlyColumn.resizingMask = .autoresizingMask
+        outlineView.addTableColumn(onlyColumn)
 
-        dataSource = OutlineViewDataSource(items: items, children: children)
+        dataSource = OutlineViewDataSource(
+            items: items.map { OutlineViewItem(value: $0, children: children) })
         delegate = OutlineViewDelegate(rowContent: rowContent, selectionChanged: selectionChanged)
         outlineView.dataSource = dataSource
         outlineView.delegate = delegate
+
+        childrenPath = children
 
         super.init(nibName: nil, bundle: nil)
 
@@ -51,44 +50,44 @@ public class OutlineViewController<Item: Identifiable & Hashable>: NSViewControl
         ])
     }
 
+    required init?(coder: NSCoder) {
+        return nil
+    }
+
     public override func loadView() {
         view = NSView()
     }
 
     public override func viewWillAppear() {
-        // Workaround layout glitches that occur when the
-        // outline view is presented for the first time.
-        outlineView.reloadData()
+        // Size the column to take the full width. This combined with
+        // the uniform column autoresizing style allows the column to
+        // adjust its width with a change in width of the outline view.
+        outlineView.sizeLastColumnToFit()
         super.viewWillAppear()
     }
+}
 
-    required init?(coder: NSCoder) {
-        return nil
-    }
-
+// MARK: - Performing updates
+extension OutlineViewController {
     func updateItems(newValue: [Item]) {
-        let diff = newValue.difference(from: dataSource.items, by: { $0.id == $1.id }).inferringMoves()
+        let newState = newValue.map { OutlineViewItem(value: $0, children: childrenPath) }
 
         outlineView.beginUpdates()
-        dataSource.items = newValue
 
-        for change in diff {
-            if case let .remove(offset, _, _) = change {
-                outlineView.removeItems(at: IndexSet([offset]), inParent: nil, withAnimation: .effectFade)
-            }
-            if case let .insert(offset, _, _) = change {
-                outlineView.insertItems(at: IndexSet([offset]), inParent: nil, withAnimation: .effectFade)
-            }
-        }
+        let oldState = dataSource.items
+        dataSource.items = newState
+        dataSource.performUpdates(
+            outlineView: outlineView,
+            oldState: oldState,
+            newState: newState,
+            parent: nil)
 
         outlineView.endUpdates()
+    }
 
-        // Workaround layout issues with the first row.
-        // It does not seem to adjust its height correctly based on the autolayout constraints.
-        if !dataSource.items.isEmpty {
-            if outlineView.rows(in: outlineView.visibleRect).contains(0) {
-                outlineView.noteHeightOfRows(withIndexesChanged: IndexSet([0]))
-            }
-        }
+    func changeSelectedItem(to item: Item?) {
+        delegate.changeSelectedItem(
+            to: item.map { OutlineViewItem(value: $0, children: childrenPath) },
+            in: outlineView)
     }
 }

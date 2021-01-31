@@ -1,7 +1,7 @@
 import SwiftUI
 import Cocoa
 
-public struct OutlineView<Item: Identifiable & Hashable>: NSViewControllerRepresentable {
+public struct OutlineView<Item: Identifiable>: NSViewControllerRepresentable {
     public typealias NSViewControllerType = OutlineViewController<Item>
 
     let items: [Item]
@@ -32,6 +32,6 @@ public struct OutlineView<Item: Identifiable & Hashable>: NSViewControllerRepres
 
     public func updateNSViewController(_ outlineController: OutlineViewController<Item>, context: Context) {
         outlineController.updateItems(newValue: items)
-        outlineController.delegate.changeSelectedItem(to: selection, in: outlineController.outlineView)
+        outlineController.changeSelectedItem(to: selection)
     }
 }
