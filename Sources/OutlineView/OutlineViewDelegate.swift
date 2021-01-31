@@ -34,20 +34,21 @@ where Data.Element: Identifiable {
         // initial height of the row still needs to be provided. Not providing
         // a height for each cell would lead to the outline view defaulting to the
         // `outlineView.rowHeight` when inserted. The cell may resize to the correct
-        // height if the outlinew view is reloaded. I am not able to find a better
-        // way to compute the final width of the cell other than hard-coding some
-        // of the constants.
+        // height if the outlinew view is reloaded.
 
-        // Width of disclosure indicator. Obtained by inspecting the view heirarchy.
-        let outlineCellWidth: CGFloat = 13.0
-        // Distance the disclosure indicator is pushed-back from the leading edge of the column.
-        let outlineCellPushback: CGFloat = 4.0
+        // I am not able to find a better way to compute the final width of the cell
+        // other than hard-coding some of the constants.
+        let columnHorizontalInset: CGFloat
+        if outlineView.effectiveStyle == .plain {
+            columnHorizontalInset = 18
+        } else {
+            columnHorizontalInset = 9
+        }
 
         let column = outlineView.tableColumns.first.unsafelyUnwrapped
         let indentInset = CGFloat(outlineView.level(forItem: item)) * outlineView.indentationPerLevel
 
-        let inset = indentInset + outlineCellWidth - outlineCellPushback
-        let width = column.width - inset
+        let width = column.width - indentInset - columnHorizontalInset
 
         // The view is provided by the user. And the width info is not provided
         // separately. It does not seem efficient to create a new cell to find
