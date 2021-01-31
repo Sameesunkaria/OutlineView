@@ -1,19 +1,20 @@
 import Cocoa
 
-public class OutlineViewController<Item: Identifiable>: NSViewController {
+public class OutlineViewController<Data: Sequence>: NSViewController
+where Data.Element: Identifiable {
     let outlineView = NSOutlineView()
     let scrollView = NSScrollView(frame: NSRect(x: 0, y: 0, width: 400, height: 400))
     
-    let dataSource: OutlineViewDataSource<Item>
-    let delegate: OutlineViewDelegate<Item>
+    let dataSource: OutlineViewDataSource<Data>
+    let delegate: OutlineViewDelegate<Data>
 
-    let childrenPath: KeyPath<Item, [Item]?>
+    let childrenPath: KeyPath<Data.Element, Data?>
 
     init(
-        items: [Item],
-        children: KeyPath<Item, [Item]?>,
-        rowContent: @escaping (Item) -> NSView,
-        selectionChanged: @escaping (Item?) -> Void
+        data: Data,
+        children: KeyPath<Data.Element, Data?>,
+        content: @escaping (Data.Element) -> NSView,
+        selectionChanged: @escaping (Data.Element?) -> Void
     ) {
         scrollView.documentView = outlineView
         scrollView.hasVerticalScroller = true
@@ -31,8 +32,8 @@ public class OutlineViewController<Item: Identifiable>: NSViewController {
         outlineView.addTableColumn(onlyColumn)
 
         dataSource = OutlineViewDataSource(
-            items: items.map { OutlineViewItem(value: $0, children: children) })
-        delegate = OutlineViewDelegate(rowContent: rowContent, selectionChanged: selectionChanged)
+            items: data.map { OutlineViewItem(value: $0, children: children) })
+        delegate = OutlineViewDelegate(content: content, selectionChanged: selectionChanged)
         outlineView.dataSource = dataSource
         outlineView.delegate = delegate
 
@@ -69,7 +70,7 @@ public class OutlineViewController<Item: Identifiable>: NSViewController {
 
 // MARK: - Performing updates
 extension OutlineViewController {
-    func updateItems(newValue: [Item]) {
+    func updateData(newValue: Data) {
         let newState = newValue.map { OutlineViewItem(value: $0, children: childrenPath) }
 
         outlineView.beginUpdates()
@@ -85,7 +86,7 @@ extension OutlineViewController {
         outlineView.endUpdates()
     }
 
-    func changeSelectedItem(to item: Item?) {
+    func changeSelectedItem(to item: Data.Element?) {
         delegate.changeSelectedItem(
             to: item.map { OutlineViewItem(value: $0, children: childrenPath) },
             in: outlineView)

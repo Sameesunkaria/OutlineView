@@ -1,14 +1,15 @@
 import Cocoa
 
-class OutlineViewDataSource<Item: Identifiable>: NSObject, NSOutlineViewDataSource {
-    var items: [OutlineViewItem<Item>]
+class OutlineViewDataSource<Data: Sequence>: NSObject, NSOutlineViewDataSource
+where Data.Element: Identifiable {
+    var items: [OutlineViewItem<Data>]
 
-    init(items: [OutlineViewItem<Item>]) {
+    init(items: [OutlineViewItem<Data>]) {
         self.items = items
     }
 
-    func typedItem(_ item: Any) -> OutlineViewItem<Item> {
-        item as! OutlineViewItem<Item>
+    func typedItem(_ item: Any) -> OutlineViewItem<Data> {
+        item as! OutlineViewItem<Data>
     }
 
     func outlineView(
@@ -50,9 +51,9 @@ extension OutlineViewDataSource {
     ///  `OutlineViewDataSource.items` should be updated to the new state before calling this method.
     func performUpdates(
         outlineView: NSOutlineView,
-        oldState: [OutlineViewItem<Item>]?,
-        newState: [OutlineViewItem<Item>]?,
-        parent: OutlineViewItem<Item>?
+        oldState: [OutlineViewItem<Data>]?,
+        newState: [OutlineViewItem<Data>]?,
+        parent: OutlineViewItem<Data>?
     ) {
         let oldNonOptionalState = oldState ?? []
         let newNonOptionalState = newState ?? []
@@ -71,7 +72,7 @@ extension OutlineViewDataSource {
             outlineView.reloadItem(parent, reloadChildren: false)
         }
 
-        var removedElements = [OutlineViewItem<Item>]()
+        var removedElements = [OutlineViewItem<Data>]()
 
         for change in diff {
             switch change {

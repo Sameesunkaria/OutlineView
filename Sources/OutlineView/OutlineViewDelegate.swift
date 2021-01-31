@@ -1,19 +1,20 @@
 import Cocoa
 
-class OutlineViewDelegate<Item: Identifiable>: NSObject, NSOutlineViewDelegate {
-    let rowContent: (Item) -> NSView
-    let selectionChanged: (Item?) -> Void
-    var selectedItem: OutlineViewItem<Item>?
+class OutlineViewDelegate<Data: Sequence>: NSObject, NSOutlineViewDelegate
+where Data.Element: Identifiable {
+    let content: (Data.Element) -> NSView
+    let selectionChanged: (Data.Element?) -> Void
+    var selectedItem: OutlineViewItem<Data>?
 
-    func typedItem(_ item: Any) -> OutlineViewItem<Item> {
-        item as! OutlineViewItem<Item>
+    func typedItem(_ item: Any) -> OutlineViewItem<Data> {
+        item as! OutlineViewItem<Data>
     }
 
     init(
-        rowContent: @escaping (Item) -> NSView,
-        selectionChanged: @escaping (Item?) -> Void
+        content: @escaping (Data.Element) -> NSView,
+        selectionChanged: @escaping (Data.Element?) -> Void
     ) {
-        self.rowContent = rowContent
+        self.content = content
         self.selectionChanged = selectionChanged
     }
 
@@ -22,7 +23,7 @@ class OutlineViewDelegate<Item: Identifiable>: NSObject, NSOutlineViewDelegate {
         viewFor tableColumn: NSTableColumn?,
         item: Any
     ) -> NSView? {
-        rowContent(typedItem(item).value)
+        content(typedItem(item).value)
     }
 
     func outlineView(
@@ -52,7 +53,7 @@ class OutlineViewDelegate<Item: Identifiable>: NSObject, NSOutlineViewDelegate {
         // separately. It does not seem efficient to create a new cell to find
         // out the width of a cell. In practice I have not experienced any issues
         // with a moderate number of cells.
-        let view = rowContent(typedItem(item).value)
+        let view = content(typedItem(item).value)
         view.widthAnchor.constraint(equalToConstant: width).isActive = true
         return view.fittingSize.height
     }
@@ -75,7 +76,10 @@ class OutlineViewDelegate<Item: Identifiable>: NSObject, NSOutlineViewDelegate {
         }
     }
 
-    func selectRow(for item: OutlineViewItem<Item>?, in outlineView: NSOutlineView) {
+    func selectRow(
+        for item: OutlineViewItem<Data>?,
+        in outlineView: NSOutlineView
+    ) {
         // Returns -1 if row is not found.
         let index = outlineView.row(forItem: selectedItem)
         if index != -1 {
@@ -85,7 +89,10 @@ class OutlineViewDelegate<Item: Identifiable>: NSObject, NSOutlineViewDelegate {
         }
     }
 
-    func changeSelectedItem(to item: OutlineViewItem<Item>?, in outlineView: NSOutlineView) {
+    func changeSelectedItem(
+        to item: OutlineViewItem<Data>?,
+        in outlineView: NSOutlineView
+    ) {
         selectedItem = item
         selectRow(for: selectedItem, in: outlineView)
     }
