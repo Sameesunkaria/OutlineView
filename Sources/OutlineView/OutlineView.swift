@@ -10,6 +10,9 @@ where Data.Element: Identifiable {
     @Binding var selection: Data.Element?
     var content: (Data.Element) -> NSView
 
+    var style: NSOutlineView.Style = .automatic
+    var indentation: CGFloat = 13.0
+
     /// Creates an outline view from a collection of root data elements and
     /// a key path to its children.
     ///
@@ -56,6 +59,8 @@ where Data.Element: Identifiable {
             children: children,
             content: content,
             selectionChanged: { selection = $0 })
+        controller.setStyle(to: style)
+        controller.setIndentation(to: indentation)
         return controller
     }
 
@@ -65,5 +70,21 @@ where Data.Element: Identifiable {
     ) {
         outlineController.updateData(newValue: data)
         outlineController.changeSelectedItem(to: selection)
+    }
+}
+
+public extension OutlineView {
+    /// Sets the style for the `OutlineView`.
+    func outlineViewStyle(_ style: NSOutlineView.Style) -> Self {
+        var mutableSelf = self
+        mutableSelf.style = style
+        return mutableSelf
+    }
+
+    /// Sets the width of the indentation per level for the `OutlineView`.
+    func outlineViewIndentation(_ width: CGFloat) -> Self {
+        var mutableSelf = self
+        mutableSelf.indentation = width
+        return mutableSelf
     }
 }

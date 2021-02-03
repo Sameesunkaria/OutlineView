@@ -24,7 +24,6 @@ where Data.Element: Identifiable {
         outlineView.autoresizesOutlineColumn = false
         outlineView.headerView = nil
         outlineView.usesAutomaticRowHeights = true
-        outlineView.selectionHighlightStyle = .sourceList
         outlineView.columnAutoresizingStyle = .uniformColumnAutoresizingStyle
 
         let onlyColumn = NSTableColumn()
@@ -90,5 +89,13 @@ extension OutlineViewController {
         delegate.changeSelectedItem(
             to: item.map { OutlineViewItem(value: $0, children: childrenPath) },
             in: outlineView)
+    }
+
+    func setStyle(to style: NSOutlineView.Style) {
+        outlineView.style = style
+    }
+
+    func setIndentation(to width: CGFloat) {
+        outlineView.indentationPerLevel = width
     }
 }
