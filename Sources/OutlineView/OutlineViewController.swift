@@ -7,6 +7,7 @@ where Data.Element: Identifiable {
     
     let dataSource: OutlineViewDataSource<Data>
     let delegate: OutlineViewDelegate<Data>
+    let updater = OutlineViewUpdater<Data>()
 
     let childrenPath: KeyPath<Data.Element, Data?>
 
@@ -76,7 +77,7 @@ extension OutlineViewController {
 
         let oldState = dataSource.items
         dataSource.items = newState
-        dataSource.performUpdates(
+        updater.performUpdates(
             outlineView: outlineView,
             oldState: oldState,
             newState: newState,
