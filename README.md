@@ -4,8 +4,16 @@
 It provides a convenient wrapper around AppKit's `NSOutlineView`, similar to SwiftUI's `OutlineGroup`. `OutlineView` differs from the native `OutlineGroup` as it provides it's own scroll view and doesn't have to be embedded in a `List`.
 
 <p align="center">
-  <img alt="Screenshot" src="Example/Screenshot.png">
+  <img width="606" alt="Screenshot" src="Example/Screenshot.png">
 </p>
+
+## Installation
+
+You can install the `OutlineView` package using SwiftPM.
+
+```
+https://github.com/Sameesunkaria/OutlineView.git
+```
 
 ## Usage
 
@@ -33,27 +41,21 @@ struct FileItem: Hashable, Identifiable, CustomStringConvertible {
 }
 
 let data = [
-  FileItem(name: "doc001.txt"),
   FileItem(
-    name: "users",
+    name: "user1234",
     children: [
       FileItem(
-        name: "user1234",
+        name: "Photos",
         children: [
-          FileItem(
-            name: "Photos",
-            children: [
-              FileItem(name: "photo001.jpg"),
-              FileItem(name: "photo002.jpg")]),
-          FileItem(
-            name: "Movies",
-            children: [FileItem(name: "movie001.mp4")]),
-          FileItem(name: "Documents", children: [])]),
-        FileItem(
-          name: "newuser",
-          children: [FileItem(name: "Documents", children: [])])
-    ]
-  )
+          FileItem(name: "photo001.jpg"),
+          FileItem(name: "photo002.jpg")]),
+      FileItem(
+        name: "Movies",
+        children: [FileItem(name: "movie001.mp4")]),
+      FileItem(name: "Documents", children: [])]),
+  FileItem(
+    name: "newuser",
+    children: [FileItem(name: "Documents", children: [])])
 ]
 
 @State var selection: FileItem?
