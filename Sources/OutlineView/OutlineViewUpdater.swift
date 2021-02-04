@@ -15,7 +15,7 @@ where Data.Element: Identifiable {
         let oldNonOptionalState = oldState ?? []
         let newNonOptionalState = newState ?? []
 
-        guard !oldNonOptionalState.isEmpty || !newNonOptionalState.isEmpty else {
+        guard oldState != nil || newState != nil else {
             // Early exit. No state to compare.
             return
         }
@@ -23,7 +23,7 @@ where Data.Element: Identifiable {
         let diff = newNonOptionalState.difference(
             from: oldNonOptionalState, by: { $0.value.id == $1.value.id })
 
-        if !diff.isEmpty {
+        if !diff.isEmpty || oldState != newState {
             // Parent needs to be update as the children have changed.
             // Children are not reloaded to allow animation.
             outlineView.reloadItem(parent, reloadChildren: false)
