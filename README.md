@@ -1,7 +1,7 @@
 # OutlineView for SwiftUI on macOS
 
 `OutlineView` is a SwiftUI view for macOS, which allows you to display hierarchical visual layouts (like directories and files) that can be expanded and collapsed. 
-It provides a convenient wrapper around AppKit's `NSOutlineView`, similar to SwiftUI's `OutlineGroup`. `OutlineView` differs from the native `OutlineGroup` as it provides it's own scroll view and doesn't have to be embedded in a `List`.
+It provides a convenient wrapper around AppKit's `NSOutlineView`, similar to SwiftUI's `OutlineGroup` embedded in a `List` or a `List` with children. `OutlineView` provides it's own scroll view and doesn't have to be embedded in a `List`.
 
 <p align="center">
   <img width="606" alt="Screenshot" src="Example/Screenshot.png">
@@ -17,7 +17,7 @@ https://github.com/Sameesunkaria/OutlineView.git
 
 ## Usage
 
-The API of the `OutlineView` is similar to the native `OutlineGroup` or of a `List` with children.
+The API of the `OutlineView` is similar to the native SwiftUI `List` with children.
 
 In the following example, a tree structure of `FileItem` data offers a simplified view of a file system. Passing a sequence of root elements of this tree and the key path of its children allows you to quickly create a visual representation of the file system.
 
@@ -88,11 +88,11 @@ OutlineView(data, children: \.children, selection: $selection) { item in
 .outlineViewIndentation(20)
 ```
 
-## Why use `OutlineView` instead of the native `OutlineGroup`?
+## Why use `OutlineView` instead of the native `List` with children?
 
-`OutlineView` is meant to serve as a stopgap solution to a few of the quirks of an `OutlineGroup` on macOS.
+`OutlineView` is meant to serve as a stopgap solution to a few of the quirks of `OutlineGroup`s in a `List` or `List` with children on macOS.
 
-- The current implementation of updates on the `OutlineGroup` is miscalculated, which leads to incorrect cell updates on the UI and crashes due to accessing invalid indices on the internal model. This bug makes the `OutlineGroup` unusable on macOS unless you are working with static content.
+- The current implementation of updates on a list with `OutlineGroup`s is miscalculated, which leads to incorrect cell updates on the UI and crashes due to accessing invalid indices on the internal model. This bug makes the `OutlineGroup` unusable on macOS unless you are working with static content.
 - It is easier to expose more of the built-in features of an `NSOutlineView` as we have full control over the code, which enables bringing over additional features in the future like support for grid lines and multiple columns.
 - Currently, `OutlineView` has the same minimum deployment target as `OutlineGroup` (macOS 11). However, it is easy to lower the deployment target if the need arises.
 - `OutlineView` supports row animations for updates by default.
@@ -102,4 +102,4 @@ OutlineView(data, children: \.children, selection: $selection) { item in
 `OutlineView` is implemented using the public API for SwiftUI, leading to some limitations that are hard to workaround.
 
 - The content of the cells has to be represented as an `NSView`. This is required as `NSOutlineView` has internal methods for automatically changing the selected cell's text color. A SwiftUI `Text` is not accessible from AppKit, and therefore, any SwiftUI `Text` views will not be able to adopt the system behavior for the highlighted cell's text color. Providing an `NSView` with `NSTextField`s for displaying text allows us to work around that limitation.
-- Automatic height `NSOutlineView`s still seems to require an initial cell height to be provided. This in itself is not a problem, but the default `fittingSize` of an `NSView` with the correct constraints around a multiline `NSTextField` is miscalculated. The `NSTextField`'s width does not seem to be bounded when the fitting size is calculated (even if a correct max-width constraint was provided to the `NSView`). So, if you have a variable height `NSView`, you have to make sure that the `fittingSize` is computed appropriately.
+- Automatic height `NSOutlineView`s still seems to require an initial cell height to be provided. This in itself is not a problem, but the default `fittingSize` of an `NSView` with the correct constraints around a multiline `NSTextField` is miscalculated. The `NSTextField`'s width does not seem to be bounded when the fitting size is calculated (even if a correct max-width constraint was provided to the `NSView`). So, if you have a variable height `NSView`, you have to make sure that the `fittingSize` is computed appropriately. (Setting the `NSTextField.preferredMaxLayoutWidth` to the expected width for fitting size calculations should be sufficient.)
