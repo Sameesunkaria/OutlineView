@@ -67,7 +67,7 @@ extension OutlineViewUpdaterTests {
             case ((nil, let l), (nil, let r)): return l < r
             case ((nil, _), (_, _)): return true
             case ((_, _), (nil, _)): return false
-            case ((_, let l), (_, let r)): return l < r
+            case ((let l, _), (let r, _)): return l < r
             }
         }
     }
