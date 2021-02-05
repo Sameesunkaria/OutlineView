@@ -17,7 +17,7 @@ https://github.com/Sameesunkaria/OutlineView.git
 
 ## Usage
 
-The API of the `OutlineView` is similar to the native SwiftUI `List` with children.
+The API of the `OutlineView` is similar to the native SwiftUI `List` with children. However, there is one notable difference; `OutlineView` requires you to provide an `NSView` (preferably an `NSTableCellView`) as the content view. This API decision is discussed in the [caveats](#Caveats) section.
 
 In the following example, a tree structure of `FileItem` data offers a simplified view of a file system. Passing a sequence of root elements of this tree and the key path of its children allows you to quickly create a visual representation of the file system.
 

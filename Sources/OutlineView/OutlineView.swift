@@ -39,8 +39,9 @@ where Data.Element: Identifiable {
     ///     leaf in the tree, like a regular file in a file system.
     ///   - selection: A binding to a selected value.
     ///   - content: A closure that produces an `NSView` based on an
-    ///    element in `data`. The `NSView` should return the correct `fittingSize`
-    ///    as it is used to determine the height of the cell.
+    ///     element in `data`. An `NSTableCellView` subclass is preferred.
+    ///     The `NSView` should return the correct `fittingSize`
+    ///     as it is used to determine the height of the cell.
     public init(
         _ data: Data,
         children: KeyPath<Data.Element, Data?>,
