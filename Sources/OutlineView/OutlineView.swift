@@ -9,7 +9,7 @@ where Data.Element: Identifiable {
     let children: KeyPath<Data.Element, Data?>
     @Binding var selection: Data.Element?
     var content: (Data.Element) -> NSView
-    var separatorInsets: (Data.Element) -> NSEdgeInsets
+    var separatorInsets: ((Data.Element) -> NSEdgeInsets)?
 
     var style: NSOutlineView.Style = .automatic
     var indentation: CGFloat = 13.0
@@ -54,7 +54,6 @@ where Data.Element: Identifiable {
         self.data = data
         self.children = children
         self._selection = selection
-        self.separatorInsets = { _ in .zero }
         self.separatorVisibility = .hidden
         self.content = content
     }
