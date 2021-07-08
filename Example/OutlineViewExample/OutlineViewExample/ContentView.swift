@@ -49,12 +49,50 @@ let data = [
 
 struct ContentView: View {
     @State var selection: FileItem?
+    @State var separatorColor: Color = .black.opacity(0.1)
+    @State var separatorEnabled = false
+
     var body: some View {
-        OutlineView(data, children: \.children, selection: $selection) { fileItem in
+        VStack {
+            outlineView
+            Divider()
+            configBar
+        }
+        .background(Color(NSColor.textBackgroundColor))
+    }
+
+    var outlineView: some View {
+        OutlineView(
+            data,
+            children: \.children,
+            selection: $selection,
+            separatorInsets: { fileItem in
+                NSEdgeInsets(
+                    top: 0,
+                    left: 24,
+                    bottom: 0,
+                    right: 0)
+            }
+        ) { fileItem in
             FileItemView(fileItem: fileItem)
         }
-        .outlineViewStyle(.sourceList)
+        .outlineViewStyle(.inset)
         .outlineViewIndentation(20)
+        .rowSeparator(separatorEnabled ? .visible : .hidden)
+        .rowSeparatorColor(NSColor(separatorColor))
+    }
+
+    var configBar: some View {
+        HStack {
+            Spacer()
+            ColorPicker(
+                "Set separator color:",
+                selection: $separatorColor)
+            Button(
+                "Toggle separator",
+                action: { separatorEnabled.toggle() })
+        }
+        .padding([.leading, .bottom, .trailing], 8)
     }
 }
 
