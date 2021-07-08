@@ -15,7 +15,8 @@ where Data.Element: Identifiable {
         data: Data,
         children: KeyPath<Data.Element, Data?>,
         content: @escaping (Data.Element) -> NSView,
-        selectionChanged: @escaping (Data.Element?) -> Void
+        selectionChanged: @escaping (Data.Element?) -> Void,
+        separatorInsets: @escaping (Data.Element) -> NSEdgeInsets
     ) {
         scrollView.documentView = outlineView
         scrollView.hasVerticalScroller = true
@@ -33,7 +34,10 @@ where Data.Element: Identifiable {
 
         dataSource = OutlineViewDataSource(
             items: data.map { OutlineViewItem(value: $0, children: children) })
-        delegate = OutlineViewDelegate(content: content, selectionChanged: selectionChanged)
+        delegate = OutlineViewDelegate(
+            content: content,
+            selectionChanged: selectionChanged,
+            separatorInsets: separatorInsets)
         outlineView.dataSource = dataSource
         outlineView.delegate = delegate
 
@@ -98,5 +102,23 @@ extension OutlineViewController {
 
     func setIndentation(to width: CGFloat) {
         outlineView.indentationPerLevel = width
+    }
+
+    func setRowSeparator(visibility: SeparatorVisibility) {
+        switch visibility {
+        case .hidden:
+            outlineView.gridStyleMask = []
+        case .visible:
+            outlineView.gridStyleMask = .solidHorizontalGridLineMask
+        }
+    }
+
+    func setRowSeparator(color: NSColor) {
+        guard color != outlineView.gridColor else {
+            return
+        }
+
+        outlineView.gridColor = color
+        outlineView.reloadData()
     }
 }
