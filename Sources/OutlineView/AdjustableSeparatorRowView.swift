@@ -3,7 +3,7 @@ import ObjectiveC
 
 /// An NSTableRowView with an adjustable separator line.
 class AdjustableSeparatorRowView: NSTableRowView {
-    var separatorInsets: NSEdgeInsets = .zero
+    var separatorInsets: NSEdgeInsets?
 
     public override init(frame frameRect: NSRect) {
         Self.setupSwizzling
@@ -19,17 +19,29 @@ class AdjustableSeparatorRowView: NSTableRowView {
     /// Computes the frame of the `_separatorView`.
     @objc
     func separatorRect() -> CGRect {
-        // Get the frame from the original method.
-        guard let rect = Self.originalSeparatorRect?(self) else {
-            return .zero
+        // Only override the default behavior if the
+        // separator insets are not available.
+        guard let separatorInsets = separatorInsets else {
+            // Get the frame from the original method.
+            return Self.originalSeparatorRect?(self) ?? .zero
         }
 
-        // Inset the frame by the separatorInsets.
+        guard self.numberOfColumns > 0 else { return .zero }
+        let viewRect = (self.view(atColumn: 0)! as! NSView).frame
+
+        // One point thick separator of the width of the first (and only) column.
+        let separatorRect = NSRect(
+            x: viewRect.origin.x,
+            y: max(0, viewRect.height - 1),
+            width: viewRect.width,
+            height: 1)
+
+        // Inset the separator frame by the separatorInsets.
         return CGRect(
-            x: rect.origin.x + separatorInsets.left,
-            y: rect.origin.y + separatorInsets.top,
-            width: rect.width - separatorInsets.left - separatorInsets.right,
-            height: rect.height - separatorInsets.top - separatorInsets.bottom)
+            x: separatorRect.origin.x + separatorInsets.left,
+            y: separatorRect.origin.y + separatorInsets.top,
+            width: separatorRect.width - separatorInsets.left - separatorInsets.right,
+            height: separatorRect.height - separatorInsets.top - separatorInsets.bottom)
     }
 
     /// Stores the original implementation of `_separatorRect` if sucessfully swizzled.

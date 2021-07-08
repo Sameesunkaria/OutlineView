@@ -4,7 +4,7 @@ class OutlineViewDelegate<Data: Sequence>: NSObject, NSOutlineViewDelegate
 where Data.Element: Identifiable {
     let content: (Data.Element) -> NSView
     let selectionChanged: (Data.Element?) -> Void
-    let separatorInsets: (Data.Element) -> NSEdgeInsets
+    let separatorInsets: ((Data.Element) -> NSEdgeInsets)?
     var selectedItem: OutlineViewItem<Data>?
 
     func typedItem(_ item: Any) -> OutlineViewItem<Data> {
@@ -14,7 +14,7 @@ where Data.Element: Identifiable {
     init(
         content: @escaping (Data.Element) -> NSView,
         selectionChanged: @escaping (Data.Element?) -> Void,
-        separatorInsets: @escaping (Data.Element) -> NSEdgeInsets
+        separatorInsets: ((Data.Element) -> NSEdgeInsets)?
     ) {
         self.content = content
         self.selectionChanged = selectionChanged
@@ -34,7 +34,7 @@ where Data.Element: Identifiable {
         rowViewForItem item: Any
     ) -> NSTableRowView? {
         let rowView = AdjustableSeparatorRowView(frame: .zero)
-        rowView.separatorInsets = separatorInsets(typedItem(item).value)
+        rowView.separatorInsets = separatorInsets?(typedItem(item).value)
         return rowView
     }
 

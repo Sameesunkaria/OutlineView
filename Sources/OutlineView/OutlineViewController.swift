@@ -16,7 +16,7 @@ where Data.Element: Identifiable {
         children: KeyPath<Data.Element, Data?>,
         content: @escaping (Data.Element) -> NSView,
         selectionChanged: @escaping (Data.Element?) -> Void,
-        separatorInsets: @escaping (Data.Element) -> NSEdgeInsets
+        separatorInsets: ((Data.Element) -> NSEdgeInsets)?
     ) {
         scrollView.documentView = outlineView
         scrollView.hasVerticalScroller = true
