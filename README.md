@@ -88,12 +88,47 @@ OutlineView(data, children: \.children, selection: $selection) { item in
 .outlineViewIndentation(20)
 ```
 
+#### Displaying separators
+
+You can customize the `OutlineView` to display row separators by using the `rowSeparator` modifier.
+
+```swift
+OutlineView(data, children: \.children, selection: $selection) { item in
+  NSTextField(string: item.description)
+}
+.rowSeparator(.visible)
+```
+
+To customize the separator insets, you can use the initilaizer which takes `separatorInsets` as an argument. `separatorInsets` is a closure that specifies the edge insets of a separator for the row displaying the data element.
+
+```swift
+OutlineView(
+  data, 
+  children: \.children, 
+  selection: $selection
+  separatorInsets: { item in NSEdgeInsets(top: 0, left: 24, bottom: 0, right: 0) }) { item in
+  NSTextField(string: item.description)
+}
+```
+
+#### Row separator color
+
+You can customize the color of the row separators of the `OutlineView`. The default color is `NSColor.separatorColor`.
+
+```swift
+OutlineView(data, children: \.children, selection: $selection) { item in
+  NSTextField(string: item.description)
+}
+.rowSeparator(.visible)
+.rowSeparatorColor(.red)
+```
+
 ## Why use `OutlineView` instead of the native `List` with children?
 
 `OutlineView` is meant to serve as a stopgap solution to a few of the quirks of `OutlineGroup`s in a `List` or `List` with children on macOS.
 
 - The current implementation of updates on a list with `OutlineGroup`s is miscalculated, which leads to incorrect cell updates on the UI and crashes due to accessing invalid indices on the internal model. This bug makes the `OutlineGroup` unusable on macOS unless you are working with static content.
-- It is easier to expose more of the built-in features of an `NSOutlineView` as we have full control over the code, which enables bringing over additional features in the future like support for grid lines and multiple columns.
+- It is easier to expose more of the built-in features of an `NSOutlineView` as we have full control over the code, which enables bringing over additional features in the future like support for multiple columns.
 - Currently, `OutlineView` has the same minimum deployment target as `OutlineGroup` (macOS 11). However, it is easy to lower the deployment target if the need arises.
 - `OutlineView` supports row animations for updates by default.
 
