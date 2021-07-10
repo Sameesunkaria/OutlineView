@@ -51,7 +51,7 @@ struct ContentView: View {
     @Environment(\.colorScheme) var colorScheme
 
     @State var selection: FileItem?
-    @State var separatorColor: Color = .black.opacity(0.1)
+    @State var separatorColor: Color = Color(NSColor.separatorColor)
     @State var separatorEnabled = false
 
     var body: some View {
@@ -75,7 +75,7 @@ struct ContentView: View {
             separatorInsets: { fileItem in
                 NSEdgeInsets(
                     top: 0,
-                    left: 24,
+                    left: 23,
                     bottom: 0,
                     right: 0)
             }
