@@ -48,6 +48,8 @@ let data = [
 ]
 
 struct ContentView: View {
+    @Environment(\.colorScheme) var colorScheme
+
     @State var selection: FileItem?
     @State var separatorColor: Color = .black.opacity(0.1)
     @State var separatorEnabled = false
@@ -58,7 +60,11 @@ struct ContentView: View {
             Divider()
             configBar
         }
-        .background(Color(NSColor.textBackgroundColor))
+        .background(
+            colorScheme == .light
+                ? Color(NSColor.textBackgroundColor)
+                : Color.clear
+        )
     }
 
     var outlineView: some View {
