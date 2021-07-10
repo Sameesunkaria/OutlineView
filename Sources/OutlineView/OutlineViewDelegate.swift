@@ -94,6 +94,7 @@ where Data.Element: Identifiable {
         to item: OutlineViewItem<Data>?,
         in outlineView: NSOutlineView
     ) {
+        guard selectedItem?.id != item?.id else { return }
         selectedItem = item
         selectRow(for: selectedItem, in: outlineView)
     }
