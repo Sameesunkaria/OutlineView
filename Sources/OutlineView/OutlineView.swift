@@ -1,6 +1,7 @@
 import SwiftUI
 import Cocoa
 
+@available(macOS 10.15, *)
 public struct OutlineView<Data: Sequence>: NSViewControllerRepresentable
 where Data.Element: Identifiable {
     public typealias NSViewControllerType = OutlineViewController<Data>
@@ -127,6 +128,7 @@ where Data.Element: Identifiable {
     }
 }
 
+@available(macOS 10.15, *)
 public extension OutlineView {
 
     @available(OSX 11.0, *)
