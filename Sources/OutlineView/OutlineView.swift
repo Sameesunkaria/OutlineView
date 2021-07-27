@@ -11,7 +11,7 @@ where Data.Element: Identifiable {
     var content: (Data.Element) -> NSView
     var separatorInsets: ((Data.Element) -> NSEdgeInsets)?
 
-    var style: NSOutlineView.Style = .automatic
+    var style: Int = 0
     var indentation: CGFloat = 13.0
     var separatorVisibility: SeparatorVisibility
     var separatorColor: NSColor = .separatorColor
@@ -111,7 +111,7 @@ where Data.Element: Identifiable {
             content: content,
             selectionChanged: { selection = $0 },
             separatorInsets: separatorInsets)
-        controller.setStyle(to: style)
+//        controller.setStyle(to: style)
         controller.setIndentation(to: indentation)
         return controller
     }
@@ -128,12 +128,21 @@ where Data.Element: Identifiable {
 }
 
 public extension OutlineView {
+
+    @available(OSX 11.0, *)
     /// Sets the style for the `OutlineView`.
     func outlineViewStyle(_ style: NSOutlineView.Style) -> Self {
         var mutableSelf = self
-        mutableSelf.style = style
+        mutableSelf.style = style.rawValue
         return mutableSelf
     }
+
+    @available(OSX 10.15, *)
+    /// Pass Through
+    func outlineViewStyle(_ style: Int) -> Self {
+        return self
+    }
+
 
     /// Sets the width of the indentation per level for the `OutlineView`.
     func outlineViewIndentation(_ width: CGFloat) -> Self {

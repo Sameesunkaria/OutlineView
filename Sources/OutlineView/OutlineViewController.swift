@@ -96,6 +96,7 @@ extension OutlineViewController {
             in: outlineView)
     }
 
+    @available(OSX 11.0, *)
     func setStyle(to style: NSOutlineView.Style) {
         outlineView.style = style
     }
