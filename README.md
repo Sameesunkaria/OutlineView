@@ -129,7 +129,7 @@ OutlineView(data, children: \.children, selection: $selection) { item in
 
 - The current implementation of updates on a list with `OutlineGroup`s is miscalculated, which leads to incorrect cell updates on the UI and crashes due to accessing invalid indices on the internal model. This bug makes the `OutlineGroup` unusable on macOS unless you are working with static content.
 - It is easier to expose more of the built-in features of an `NSOutlineView` as we have full control over the code, which enables bringing over additional features in the future like support for multiple columns.
-- Currently, `OutlineView` has the same minimum deployment target as `OutlineGroup` (macOS 11). However, it is easy to lower the deployment target if the need arises.
+- Unlike SwiftUI's native `OutlineGroup` or `List` with children, `OutlineView` supports macOS 10.15 Catalina.
 - `OutlineView` supports row animations for updates by default.
 
 ## Caveats
