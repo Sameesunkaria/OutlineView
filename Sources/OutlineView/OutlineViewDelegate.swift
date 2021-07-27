@@ -47,12 +47,12 @@ where Data.Element: Identifiable {
         // initial height of the row still needs to be provided. Not providing
         // a height for each cell would lead to the outline view defaulting to the
         // `outlineView.rowHeight` when inserted. The cell may resize to the correct
-        // height if the outlinew view is reloaded.
+        // height if the outline view is reloaded.
 
         // I am not able to find a better way to compute the final width of the cell
         // other than hard-coding some of the constants.
         let columnHorizontalInset: CGFloat
-        if #available(OSX 11.0, *) {
+        if #available(macOS 11.0, *) {
             if outlineView.effectiveStyle == .plain {
                 columnHorizontalInset = 18
             } else {
