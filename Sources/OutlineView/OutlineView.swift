@@ -12,7 +12,20 @@ where Data.Element: Identifiable {
     var content: (Data.Element) -> NSView
     var separatorInsets: ((Data.Element) -> NSEdgeInsets)?
 
-    var style: Int = 0
+    /// Outline view style is unavailable on macOS 10.15 and below.
+    /// Stored as `Any` to make the property available on all platforms.
+    private var _styleStorage: Any?
+
+    @available(macOS 11.0, *)
+    var style: NSOutlineView.Style {
+        get {
+            _styleStorage.map {
+                unsafeBitCast($0, to: NSOutlineView.Style.self)
+            } ?? .automatic
+        }
+        set { _styleStorage = newValue }
+    }
+
     var indentation: CGFloat = 13.0
     var separatorVisibility: SeparatorVisibility
     var separatorColor: NSColor = .separatorColor
@@ -112,8 +125,10 @@ where Data.Element: Identifiable {
             content: content,
             selectionChanged: { selection = $0 },
             separatorInsets: separatorInsets)
-//        controller.setStyle(to: style)
         controller.setIndentation(to: indentation)
+        if #available(macOS 11.0, *) {
+            controller.setStyle(to: style)
+        }
         return controller
     }
 
@@ -131,20 +146,13 @@ where Data.Element: Identifiable {
 @available(macOS 10.15, *)
 public extension OutlineView {
 
-    @available(OSX 11.0, *)
     /// Sets the style for the `OutlineView`.
+    @available(macOS 11.0, *)
     func outlineViewStyle(_ style: NSOutlineView.Style) -> Self {
         var mutableSelf = self
-        mutableSelf.style = style.rawValue
+        mutableSelf.style = style
         return mutableSelf
     }
-
-    @available(OSX 10.15, *)
-    /// Pass Through
-    func outlineViewStyle(_ style: Int) -> Self {
-        return self
-    }
-
 
     /// Sets the width of the indentation per level for the `OutlineView`.
     func outlineViewIndentation(_ width: CGFloat) -> Self {
