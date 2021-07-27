@@ -51,8 +51,12 @@ where Data.Element: Identifiable {
         // I am not able to find a better way to compute the final width of the cell
         // other than hard-coding some of the constants.
         let columnHorizontalInset: CGFloat
-        if outlineView.effectiveStyle == .plain {
-            columnHorizontalInset = 18
+        if #available(OSX 11.0, *) {
+            if outlineView.effectiveStyle == .plain {
+                columnHorizontalInset = 18
+            } else {
+                columnHorizontalInset = 9
+            }
         } else {
             columnHorizontalInset = 9
         }
