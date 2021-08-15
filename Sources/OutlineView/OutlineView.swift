@@ -19,9 +19,9 @@ where Data.Element: Identifiable {
     @available(macOS 11.0, *)
     var style: NSOutlineView.Style {
         get {
-            _styleStorage.map {
-                unsafeBitCast($0, to: NSOutlineView.Style.self)
-            } ?? .automatic
+            _styleStorage
+                .flatMap { $0 as? NSOutlineView.Style }
+                ?? .automatic
         }
         set { _styleStorage = newValue }
     }
