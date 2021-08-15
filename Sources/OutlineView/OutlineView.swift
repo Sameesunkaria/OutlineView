@@ -103,6 +103,7 @@ where Data.Element: Identifiable {
     ///     element in `data`. An `NSTableCellView` subclass is preferred.
     ///     The `NSView` should return the correct `fittingSize`
     ///     as it is used to determine the height of the cell.
+    @available(macOS 11.0, *)
     public init(
         _ data: Data,
         children: KeyPath<Data.Element, Data?>,

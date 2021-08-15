@@ -34,9 +34,32 @@ where Data.Element: Identifiable {
         _ outlineView: NSOutlineView,
         rowViewForItem item: Any
     ) -> NSTableRowView? {
-        let rowView = AdjustableSeparatorRowView(frame: .zero)
-        rowView.separatorInsets = separatorInsets?(typedItem(item).value)
-        return rowView
+        if #available(macOS 11.0, *) {
+            // Release any unused row views.
+            releaseUnusedRowViews(from: outlineView)
+            let rowView = AdjustableSeparatorRowView(frame: .zero)
+            rowView.separatorInsets = separatorInsets?(typedItem(item).value)
+            return rowView
+        } else {
+            return nil
+        }
+    }
+
+    // There seems to be a memory leak on macOS 11 where row views returned
+    // from `rowViewForItem` are never freed. This hack patches the leak.
+    func releaseUnusedRowViews(from outlineView: NSOutlineView) {
+        guard #available(macOS 11.0, *) else { return }
+
+        // Equivalent to _rowData._rowViewPurgatory
+        let purgatoryPath = unmangle("^qnvC`s`-^qnvUhdvOtqf`snqx")
+        if let rowViewPurgatory = outlineView.value(forKeyPath: purgatoryPath) as? NSMutableSet {
+            rowViewPurgatory
+                .compactMap { $0 as? AdjustableSeparatorRowView }
+                .forEach {
+                    $0.removeFromSuperview()
+                    rowViewPurgatory.remove($0)
+                }
+        }
     }
 
     func outlineView(

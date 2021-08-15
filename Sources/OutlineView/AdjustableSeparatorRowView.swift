@@ -2,7 +2,8 @@ import AppKit
 import ObjectiveC
 
 /// An NSTableRowView with an adjustable separator line.
-class AdjustableSeparatorRowView: NSTableRowView {
+@available(macOS 11.0, *)
+final class AdjustableSeparatorRowView: NSTableRowView {
     var separatorInsets: NSEdgeInsets?
 
     public override init(frame frameRect: NSRect) {
@@ -19,6 +20,11 @@ class AdjustableSeparatorRowView: NSTableRowView {
     /// Computes the frame of the `_separatorView`.
     @objc
     func separatorRect() -> CGRect {
+        // Make sure we only override the behavior for this class.
+        guard type(of: self) == AdjustableSeparatorRowView.self else {
+            return Self.originalSeparatorRect?(self) ?? .zero
+        }
+
         // Only override the default behavior if the
         // separator insets are not available.
         guard let separatorInsets = separatorInsets else {
@@ -44,8 +50,8 @@ class AdjustableSeparatorRowView: NSTableRowView {
             height: separatorRect.height - separatorInsets.top - separatorInsets.bottom)
     }
 
-    /// Stores the original implementation of `_separatorRect` if sucessfully swizzled.
-    static var originalSeparatorRect: ((AdjustableSeparatorRowView) -> CGRect)?
+    /// Stores the original implementation of `_separatorRect` if successfully swizzled.
+    static var originalSeparatorRect: ((NSTableRowView) -> CGRect)?
 
     /// Swizzle the private `_separatorRect` defined on NSTableRowView.
     /// Should be executed early in the life-cycle of `AdjustableSeparatorRowView`.
@@ -61,7 +67,7 @@ class AdjustableSeparatorRowView: NSTableRowView {
                 #selector(separatorRect))
         else { return }
 
-        // Replace the original implmentation with our implementation.
+        // Replace the original implementation with our implementation.
         let originalImplementation = method_setImplementation(
             originalMethod,
             method_getImplementation(newMethod))
