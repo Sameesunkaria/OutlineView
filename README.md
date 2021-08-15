@@ -99,14 +99,18 @@ OutlineView(data, children: \.children, selection: $selection) { item in
 .rowSeparator(.visible)
 ```
 
-By default, macOS will attepmt to draw separators with appropriate insets based on the style of the `OutlineView` and the contents of the cell. To customize the separator insets, you can use the initilaizer which takes `separatorInsets` as an argument. `separatorInsets` is a closure that specifies the edge insets of a separator for the row displaying the data element.
+By default, macOS will attempt to draw separators with appropriate insets based on the style of the `OutlineView` and the contents of the cell. To customize the separator insets, you can use the initializer which takes `separatorInsets` as an argument. `separatorInsets` is a closure that returns the edge insets of a separator for the row displaying the provided data element.
+
+>Note: This initializer is only available on macOS 11.0 and higher.
 
 ```swift
+let separatorInset = NSEdgeInsets(top: 0, left: 24, bottom: 0, right: 0)
+
 OutlineView(
   data, 
   children: \.children, 
   selection: $selection
-  separatorInsets: { item in NSEdgeInsets(top: 0, left: 24, bottom: 0, right: 0) }) { item in
+  separatorInsets: { item in separatorInset }) { item in
   NSTextField(string: item.description)
 }
 ```
