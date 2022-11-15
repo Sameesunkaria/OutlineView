@@ -4,9 +4,13 @@ import Cocoa
 class OutlineViewDataSource<Data: Sequence>: NSObject, NSOutlineViewDataSource
 where Data.Element: Identifiable {
     var items: [OutlineViewItem<Data>]
+    var dropHandler: OutlineView<Data>.DropHandlers?
+    var dragWriter: OutlineView<Data>.DragSourceWriter?
+    let childrenPath: KeyPath<Data.Element, Data?>
 
-    init(items: [OutlineViewItem<Data>]) {
+    init(items: [OutlineViewItem<Data>], children: KeyPath<Data.Element, Data?>) {
         self.items = items
+        self.childrenPath = children
     }
 
     private func typedItem(_ item: Any) -> OutlineViewItem<Data> {
@@ -43,4 +47,82 @@ where Data.Element: Identifiable {
             return items[index]
         }
     }
+    
+    // MARK: - Drag & Drop
+    
+    func outlineView(
+        _ outlineView: NSOutlineView,
+        pasteboardWriterForItem item: Any
+    ) -> NSPasteboardWriting? {
+        
+        guard let writer = dragWriter,
+              let writeData = writer(typedItem(item).value)
+        else { return nil }
+        
+        return writeData
+    }
+    
+    private func dropTargetData(dragInfo: NSDraggingInfo, item: Any?, childIndex: Int) -> DropTarget<Data.Element>? {
+        guard let dropHandler = dropHandler,
+              let pasteboardItems = dragInfo.draggingPasteboard.pasteboardItems,
+              !pasteboardItems.isEmpty
+        else { return nil }
+        
+        let decodedItems = pasteboardItems.compactMap {
+            dropHandler.pasteboardReader($0)
+        }
+                
+        let dropTarget = DropTarget<Data.Element>(
+            items: decodedItems,
+            intoElement: item.map({ typedItem($0) })?.value,
+            childIndex: childIndex < 0 ? nil : childIndex
+        )
+        return dropTarget
+    }
+    
+    func outlineView(
+        _ outlineView: NSOutlineView,
+        validateDrop info: NSDraggingInfo,
+        proposedItem item: Any?,
+        proposedChildIndex index: Int
+    ) -> NSDragOperation {
+        
+        guard let dropTarget = dropTargetData(dragInfo: info, item: item, childIndex: index)
+        else { return [] }
+        
+        let validationResult = dropHandler!.dropValidator(dropTarget)
+
+        switch validationResult {
+            
+        case .copy:
+            return .copy
+        case .move:
+            return .move
+        case .deny:
+            return []
+        case let .copyRedirect(item, childIndex):
+            let redirectTarget = item.map { OutlineViewItem<Data>(value: $0, children: childrenPath) }
+            outlineView.setDropItem(redirectTarget, dropChildIndex: childIndex ?? -1)
+            return .copy
+        case let .moveRedirect(item, childIndex):
+            let redirectTarget = item.map { OutlineViewItem<Data>(value: $0, children: childrenPath) }
+            outlineView.setDropItem(redirectTarget, dropChildIndex: childIndex ?? -1)
+            return .move
+        }
+        
+    }
+
+    func outlineView(
+        _ outlineView: NSOutlineView,
+        acceptDrop info: NSDraggingInfo,
+        item: Any?,
+        childIndex index: Int
+    ) -> Bool {
+        
+        guard let dropTarget = dropTargetData(dragInfo: info, item: item, childIndex: index)
+        else { return false }
+        
+        return dropHandler!.dropResult(dropTarget)
+    }
+
 }

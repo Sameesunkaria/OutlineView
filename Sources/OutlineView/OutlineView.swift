@@ -30,6 +30,9 @@ where Data.Element: Identifiable {
     var separatorVisibility: SeparatorVisibility
     var separatorColor: NSColor = .separatorColor
 
+    var dragDataSource: DragSourceWriter?
+    var dropHandler: DropHandlers?
+    
     /// Creates an outline view from a collection of root data elements and
     /// a key path to its children.
     ///
@@ -141,6 +144,8 @@ where Data.Element: Identifiable {
         outlineController.changeSelectedItem(to: selection)
         outlineController.setRowSeparator(visibility: separatorVisibility)
         outlineController.setRowSeparator(color: separatorColor)
+        outlineController.setDropHandlers(dropHandler)
+        outlineController.setDragSourceWriter(dragDataSource)
     }
 }
 
@@ -176,4 +181,27 @@ public extension OutlineView {
         mutableSelf.separatorColor = color
         return mutableSelf
     }
+    
+    func dragDataSource(_ writer: @escaping DragSourceWriter) -> Self {
+        var mutableSelf = self
+        mutableSelf.dragDataSource = writer
+        return mutableSelf
+    }
+    
+    func acceptDrops(
+        types: [NSPasteboard.PasteboardType],
+        itemsFromPasteboard: @escaping PasteboardReader,
+        validateItem: @escaping DropValidator,
+        onDrop: @escaping DropResult
+    ) -> Self {
+        var mutableSelf = self
+        mutableSelf.dropHandler = DropHandlers(
+            acceptedTypes: types,
+            pasteboardReader: itemsFromPasteboard,
+            dropValidator: validateItem,
+            dropResult: onDrop
+        )
+        return mutableSelf
+    }
+    
 }

@@ -34,7 +34,9 @@ where Data.Element: Identifiable {
         outlineView.addTableColumn(onlyColumn)
 
         dataSource = OutlineViewDataSource(
-            items: data.map { OutlineViewItem(value: $0, children: children) })
+            items: data.map { OutlineViewItem(value: $0, children: children) },
+            children: children
+        )
         delegate = OutlineViewDelegate(
             content: content,
             selectionChanged: selectionChanged,
@@ -123,5 +125,17 @@ extension OutlineViewController {
 
         outlineView.gridColor = color
         outlineView.reloadData()
+    }
+    
+    func setDropHandlers(_ handlers: OutlineView<Data>.DropHandlers?) {
+        outlineView.unregisterDraggedTypes()
+        if let handlers = handlers {
+            outlineView.registerForDraggedTypes(handlers.acceptedTypes)
+        }
+        dataSource.dropHandler = handlers
+    }
+    
+    func setDragSourceWriter(_ writer: OutlineView<Data>.DragSourceWriter?) {
+        dataSource.dragWriter = writer
     }
 }
