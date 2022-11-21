@@ -2,9 +2,9 @@ import SwiftUI
 import Cocoa
 
 @available(macOS 10.15, *)
-public struct OutlineView<Data: Sequence>: NSViewControllerRepresentable
-where Data.Element: Identifiable {
-    public typealias NSViewControllerType = OutlineViewController<Data>
+public struct OutlineView<Data: Sequence, Drop: DropHandler>: NSViewControllerRepresentable
+where Drop.DataElement == Data.Element {
+    public typealias NSViewControllerType = OutlineViewController<Data, Drop>
 
     let data: Data
     let children: KeyPath<Data.Element, Data?>
@@ -31,7 +31,7 @@ where Data.Element: Identifiable {
     var separatorColor: NSColor = .separatorColor
 
     var dragDataSource: DragSourceWriter?
-    var dropHandler: DropHandlers?
+    var dropHandler: Drop?
     
     /// Creates an outline view from a collection of root data elements and
     /// a key path to its children.
@@ -122,8 +122,8 @@ where Data.Element: Identifiable {
         self.content = content
     }
 
-    public func makeNSViewController(context: Context) -> OutlineViewController<Data> {
-        let controller = OutlineViewController(
+    public func makeNSViewController(context: Context) -> OutlineViewController<Data, Drop> {
+        let controller = OutlineViewController<Data, Drop>(
             data: data,
             children: children,
             content: content,
@@ -137,14 +137,14 @@ where Data.Element: Identifiable {
     }
 
     public func updateNSViewController(
-        _ outlineController: OutlineViewController<Data>,
+        _ outlineController: OutlineViewController<Data, Drop>,
         context: Context
     ) {
         outlineController.updateData(newValue: data)
         outlineController.changeSelectedItem(to: selection)
         outlineController.setRowSeparator(visibility: separatorVisibility)
         outlineController.setRowSeparator(color: separatorColor)
-        outlineController.setDropHandlers(dropHandler)
+        outlineController.setDropHandler(dropHandler)
         outlineController.setDragSourceWriter(dragDataSource)
     }
 }
@@ -182,6 +182,9 @@ public extension OutlineView {
         return mutableSelf
     }
     
+    /// <#Description#>
+    /// - Parameter writer: <#writer description#>
+    /// - Returns: <#description#>
     func dragDataSource(_ writer: @escaping DragSourceWriter) -> Self {
         var mutableSelf = self
         mutableSelf.dragDataSource = writer
@@ -189,18 +192,10 @@ public extension OutlineView {
     }
     
     func acceptDrops(
-        types: [NSPasteboard.PasteboardType],
-        itemsFromPasteboard: @escaping PasteboardReader,
-        validateItem: @escaping DropValidator,
-        onDrop: @escaping DropResult
+        handler: Drop
     ) -> Self {
         var mutableSelf = self
-        mutableSelf.dropHandler = DropHandlers(
-            acceptedTypes: types,
-            pasteboardReader: itemsFromPasteboard,
-            dropValidator: validateItem,
-            dropResult: onDrop
-        )
+        mutableSelf.dropHandler = handler
         return mutableSelf
     }
     

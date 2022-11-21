@@ -13,6 +13,7 @@
 		336C5FE925CC9F1800230C37 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 336C5FE825CC9F1800230C37 /* Preview Assets.xcassets */; };
 		336C5FFD25CCA8DA00230C37 /* FileItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 336C5FFC25CCA8D900230C37 /* FileItemView.swift */; };
 		336C600325CCAEE700230C37 /* OutlineView in Frameworks */ = {isa = PBXBuildFile; productRef = 336C600225CCAEE700230C37 /* OutlineView */; };
+		942B79CC292A86410066B0E6 /* ViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 942B79CB292A86410066B0E6 /* ViewModel.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -25,6 +26,7 @@
 		336C5FEB25CC9F1800230C37 /* OutlineViewExample.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = OutlineViewExample.entitlements; sourceTree = "<group>"; };
 		336C5FFC25CCA8D900230C37 /* FileItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileItemView.swift; sourceTree = "<group>"; };
 		336C600025CCAEDA00230C37 /* OutlineView */ = {isa = PBXFileReference; lastKnownFileType = folder; name = OutlineView; path = ../..; sourceTree = "<group>"; };
+		942B79CB292A86410066B0E6 /* ViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -63,6 +65,7 @@
 				336C5FE125CC9F1600230C37 /* OutlineViewExampleApp.swift */,
 				336C5FE325CC9F1600230C37 /* ContentView.swift */,
 				336C5FFC25CCA8D900230C37 /* FileItemView.swift */,
+				942B79CB292A86410066B0E6 /* ViewModel.swift */,
 				336C5FE525CC9F1800230C37 /* Assets.xcassets */,
 				336C5FEA25CC9F1800230C37 /* Info.plist */,
 				336C5FEB25CC9F1800230C37 /* OutlineViewExample.entitlements */,
@@ -160,6 +163,7 @@
 			files = (
 				336C5FFD25CCA8DA00230C37 /* FileItemView.swift in Sources */,
 				336C5FE425CC9F1600230C37 /* ContentView.swift in Sources */,
+				942B79CC292A86410066B0E6 /* ViewModel.swift in Sources */,
 				336C5FE225CC9F1600230C37 /* OutlineViewExampleApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -291,7 +295,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"OutlineViewExample/Preview Content\"";
-				DEVELOPMENT_TEAM = 47YH33JD86;
+				DEVELOPMENT_TEAM = AMSDNQC8GP;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = OutlineViewExample/Info.plist;
@@ -315,7 +319,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"OutlineViewExample/Preview Content\"";
-				DEVELOPMENT_TEAM = 47YH33JD86;
+				DEVELOPMENT_TEAM = AMSDNQC8GP;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = OutlineViewExample/Info.plist;

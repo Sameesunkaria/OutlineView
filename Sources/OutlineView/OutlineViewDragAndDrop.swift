@@ -1,34 +1,22 @@
 import Foundation
 import AppKit
 
-@available(macOS 10.15, *)
-extension OutlineView {
-    
-    public typealias DragSourceWriter = (Data.Element) -> NSPasteboardItem?
 
-    public typealias PasteboardReader = (NSPasteboardItem) -> DraggedItem<Data.Element>?
-    public typealias DropValidator = (DropTarget<Data.Element>) -> ValidationResult<Data.Element>
-    public typealias DropResult = (DropTarget<Data.Element>) -> Bool
+@available(macOS 10.15, *)
+public protocol DropHandler {
+    associatedtype DataElement: Identifiable
     
-    internal struct DropHandlers {
-        var acceptedTypes: [NSPasteboard.PasteboardType]
-        var pasteboardReader: PasteboardReader
-        var dropValidator: DropValidator
-        var dropResult: DropResult
-        
-        init(
-            acceptedTypes: [NSPasteboard.PasteboardType],
-            pasteboardReader: @escaping PasteboardReader,
-            dropValidator: @escaping DropValidator,
-            dropResult: @escaping DropResult
-        ) {
-            self.pasteboardReader = pasteboardReader
-            self.dropValidator = dropValidator
-            self.dropResult = dropResult
-            self.acceptedTypes = acceptedTypes
-        }
-    }
-            
+    var acceptedTypes: [NSPasteboard.PasteboardType] { get }
+    
+    func readPasteboard(item: NSPasteboardItem) -> DraggedItem<DataElement>?
+    func validateDrop(target: DropTarget<DataElement>) -> ValidationResult<DataElement>
+    func acceptDrop(target: DropTarget<DataElement>) -> Bool
+    
+}
+
+@available(macOS 10.15, *)
+public extension OutlineView {
+    typealias DragSourceWriter = (Data.Element) -> NSPasteboardItem?
 }
 
 public typealias DraggedItem<D> = (item: D, type: NSPasteboard.PasteboardType)

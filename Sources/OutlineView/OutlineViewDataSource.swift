@@ -1,11 +1,11 @@
 import Cocoa
 
 @available(macOS 10.15, *)
-class OutlineViewDataSource<Data: Sequence>: NSObject, NSOutlineViewDataSource
-where Data.Element: Identifiable {
+class OutlineViewDataSource<Data: Sequence, Drop: DropHandler>: NSObject, NSOutlineViewDataSource
+where Drop.DataElement == Data.Element {
     var items: [OutlineViewItem<Data>]
-    var dropHandler: OutlineView<Data>.DropHandlers?
-    var dragWriter: OutlineView<Data>.DragSourceWriter?
+    var dropHandler: Drop?
+    var dragWriter: OutlineView<Data, Drop>.DragSourceWriter?
     let childrenPath: KeyPath<Data.Element, Data?>
 
     init(items: [OutlineViewItem<Data>], children: KeyPath<Data.Element, Data?>) {
@@ -69,13 +69,13 @@ where Data.Element: Identifiable {
         else { return nil }
         
         let decodedItems = pasteboardItems.compactMap {
-            dropHandler.pasteboardReader($0)
+            dropHandler.readPasteboard(item: $0)
         }
-                
+        
         let dropTarget = DropTarget<Data.Element>(
             items: decodedItems,
             intoElement: item.map({ typedItem($0) })?.value,
-            childIndex: childIndex < 0 ? nil : childIndex
+            childIndex: childIndex == NSOutlineViewDropOnItemIndex ? nil : childIndex
         )
         return dropTarget
     }
@@ -90,7 +90,7 @@ where Data.Element: Identifiable {
         guard let dropTarget = dropTargetData(dragInfo: info, item: item, childIndex: index)
         else { return [] }
         
-        let validationResult = dropHandler!.dropValidator(dropTarget)
+        let validationResult = dropHandler!.validateDrop(target: dropTarget)
 
         switch validationResult {
             
@@ -102,11 +102,11 @@ where Data.Element: Identifiable {
             return []
         case let .copyRedirect(item, childIndex):
             let redirectTarget = item.map { OutlineViewItem<Data>(value: $0, children: childrenPath) }
-            outlineView.setDropItem(redirectTarget, dropChildIndex: childIndex ?? -1)
+            outlineView.setDropItem(redirectTarget, dropChildIndex: childIndex ?? NSOutlineViewDropOnItemIndex)
             return .copy
         case let .moveRedirect(item, childIndex):
             let redirectTarget = item.map { OutlineViewItem<Data>(value: $0, children: childrenPath) }
-            outlineView.setDropItem(redirectTarget, dropChildIndex: childIndex ?? -1)
+            outlineView.setDropItem(redirectTarget, dropChildIndex: childIndex ?? NSOutlineViewDropOnItemIndex)
             return .move
         }
         
@@ -122,7 +122,7 @@ where Data.Element: Identifiable {
         guard let dropTarget = dropTargetData(dragInfo: info, item: item, childIndex: index)
         else { return false }
         
-        return dropHandler!.dropResult(dropTarget)
+        return dropHandler!.acceptDrop(target: dropTarget)
     }
 
 }

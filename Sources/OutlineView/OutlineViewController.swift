@@ -1,12 +1,12 @@
 import Cocoa
 
 @available(macOS 10.15, *)
-public class OutlineViewController<Data: Sequence>: NSViewController
-where Data.Element: Identifiable {
+public class OutlineViewController<Data: Sequence, Drop: DropHandler>: NSViewController
+where Drop.DataElement == Data.Element {
     let outlineView = NSOutlineView()
     let scrollView = NSScrollView(frame: NSRect(x: 0, y: 0, width: 400, height: 400))
     
-    let dataSource: OutlineViewDataSource<Data>
+    let dataSource: OutlineViewDataSource<Data, Drop>
     let delegate: OutlineViewDelegate<Data>
     let updater = OutlineViewUpdater<Data>()
 
@@ -127,15 +127,15 @@ extension OutlineViewController {
         outlineView.reloadData()
     }
     
-    func setDropHandlers(_ handlers: OutlineView<Data>.DropHandlers?) {
+    func setDropHandler(_ handler: Drop?) {
         outlineView.unregisterDraggedTypes()
-        if let handlers = handlers {
+        if let handlers = handler {
             outlineView.registerForDraggedTypes(handlers.acceptedTypes)
         }
-        dataSource.dropHandler = handlers
+        dataSource.dropHandler = handler
     }
     
-    func setDragSourceWriter(_ writer: OutlineView<Data>.DragSourceWriter?) {
+    func setDragSourceWriter(_ writer: OutlineView<Data, Drop>.DragSourceWriter?) {
         dataSource.dragWriter = writer
     }
 }
