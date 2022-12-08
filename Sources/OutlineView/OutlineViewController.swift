@@ -10,11 +10,11 @@ where Drop.DataElement == Data.Element {
     let delegate: OutlineViewDelegate<Data>
     let updater = OutlineViewUpdater<Data>()
 
-    let childrenPath: KeyPath<Data.Element, Data?>
+    let childrenSource: ChildSource<Data>
 
     init(
         data: Data,
-        children: KeyPath<Data.Element, Data?>,
+        childrenSource: ChildSource<Data>,
         content: @escaping (Data.Element) -> NSView,
         selectionChanged: @escaping (Data.Element?) -> Void,
         separatorInsets: ((Data.Element) -> NSEdgeInsets)?
@@ -34,8 +34,8 @@ where Drop.DataElement == Data.Element {
         outlineView.addTableColumn(onlyColumn)
 
         dataSource = OutlineViewDataSource(
-            items: data.map { OutlineViewItem(value: $0, children: children) },
-            children: children
+            items: data.map { OutlineViewItem(value: $0, children: childrenSource) },
+            childSource: childrenSource
         )
         delegate = OutlineViewDelegate(
             content: content,
@@ -44,7 +44,7 @@ where Drop.DataElement == Data.Element {
         outlineView.dataSource = dataSource
         outlineView.delegate = delegate
 
-        childrenPath = children
+        self.childrenSource = childrenSource
 
         super.init(nibName: nil, bundle: nil)
 
@@ -79,7 +79,7 @@ where Drop.DataElement == Data.Element {
 @available(macOS 10.15, *)
 extension OutlineViewController {
     func updateData(newValue: Data) {
-        let newState = newValue.map { OutlineViewItem(value: $0, children: childrenPath) }
+        let newState = newValue.map { OutlineViewItem(value: $0, children: childrenSource) }
 
         outlineView.beginUpdates()
 
@@ -96,7 +96,7 @@ extension OutlineViewController {
 
     func changeSelectedItem(to item: Data.Element?) {
         delegate.changeSelectedItem(
-            to: item.map { OutlineViewItem(value: $0, children: childrenPath) },
+            to: item.map { OutlineViewItem(value: $0, children: childrenSource) },
             in: outlineView)
     }
 

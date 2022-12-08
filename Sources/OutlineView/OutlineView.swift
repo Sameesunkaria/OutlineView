@@ -1,13 +1,29 @@
 import SwiftUI
 import Cocoa
 
+enum ChildSource<Data: Sequence> {
+    case keyPath(KeyPath<Data.Element, Data?>)
+    case provider((Data.Element) -> Data?)
+    
+    func children(for element: Data.Element) -> Data? {
+        switch self {
+        case .keyPath(let keyPath):
+            return element[keyPath: keyPath]
+        case .provider(let provider):
+            return provider(element)
+        }
+    }
+}
+
 @available(macOS 10.15, *)
 public struct OutlineView<Data: Sequence, Drop: DropReceiver>: NSViewControllerRepresentable
 where Drop.DataElement == Data.Element {
+            
     public typealias NSViewControllerType = OutlineViewController<Data, Drop>
 
     let data: Data
-    let children: KeyPath<Data.Element, Data?>
+    //let children: KeyPath<Data.Element, Data?>
+    let childSource: ChildSource<Data>
     @Binding var selection: Data.Element?
     var content: (Data.Element) -> NSView
     var separatorInsets: ((Data.Element) -> NSEdgeInsets)?
@@ -32,7 +48,7 @@ where Drop.DataElement == Data.Element {
 
     var dragDataSource: DragSourceWriter?
     var dropReceiver: Drop?
-    
+
     /// Creates an outline view from a collection of root data elements and
     /// a key path to its children.
     ///
@@ -58,27 +74,31 @@ where Drop.DataElement == Data.Element {
     ///     at the key path is `nil`, then the outline group treats `data` as a
     ///     leaf in the tree, like a regular file in a file system.
     ///   - selection: A binding to a selected value.
+    ///   - separatorInsets: An optional closure that produces row separator lines
+    ///     with the given insets for each item in the outline view. If this closure
+    ///     is not provided (the default), separators are hidden.
     ///   - content: A closure that produces an `NSView` based on an
     ///     element in `data`. An `NSTableCellView` subclass is preferred.
     ///     The `NSView` should return the correct `fittingSize`
     ///     as it is used to determine the height of the cell.
+    @available(macOS 11.0, *)
     public init(
         _ data: Data,
         children: KeyPath<Data.Element, Data?>,
         selection: Binding<Data.Element?>,
+        separatorInsets: ((Data.Element) -> NSEdgeInsets)?,
         content: @escaping (Data.Element) -> NSView
     ) {
         self.data = data
-        self.children = children
+        self.childSource = .keyPath(children)
         self._selection = selection
-        self.separatorVisibility = .hidden
+        self.separatorInsets = separatorInsets
+        self.separatorVisibility = separatorInsets == nil ? .hidden : .visible
         self.content = content
     }
 
     /// Creates an outline view from a collection of root data elements and
-    /// a key path to its children. The outline view will have row separator
-    /// lines enabled by default, the insets to which will determined by
-    /// the `separatorInsets` closure.
+    /// a closure that provides children to each element.
     ///
     /// This initializer creates an instance that uniquely identifies views
     /// across updates based on the identity of the underlying data element.
@@ -95,13 +115,16 @@ where Drop.DataElement == Data.Element {
     ///
     /// - Parameters:
     ///   - data: A collection of tree-structured, identified data.
-    ///   - children: A key path to a property whose non-`nil` value gives the
+    ///   - children: A closure whose non-`nil` return value gives the
     ///     children of `data`. A non-`nil` but empty value denotes an element
     ///     capable of having children that's currently childless, such as an
-    ///     empty directory in a file system. On the other hand, if the property
-    ///     at the key path is `nil`, then the outline group treats `data` as a
+    ///     empty directory in a file system. On the other hand, if the value
+    ///     from the closure is `nil`, then the outline group treats `data` as a
     ///     leaf in the tree, like a regular file in a file system.
     ///   - selection: A binding to a selected value.
+    ///   - separatorInsets: An optional closure that produces row separator lines
+    ///     with the given insets for each item in the outline view. If this closure
+    ///     is not provided (the default), separators are hidden.
     ///   - content: A closure that produces an `NSView` based on an
     ///     element in `data`. An `NSTableCellView` subclass is preferred.
     ///     The `NSView` should return the correct `fittingSize`
@@ -109,23 +132,23 @@ where Drop.DataElement == Data.Element {
     @available(macOS 11.0, *)
     public init(
         _ data: Data,
-        children: KeyPath<Data.Element, Data?>,
+        children: @escaping (Data.Element) -> Data?,
         selection: Binding<Data.Element?>,
-        separatorInsets: @escaping (Data.Element) -> NSEdgeInsets,
+        separatorInsets: ((Data.Element) -> NSEdgeInsets)?,
         content: @escaping (Data.Element) -> NSView
     ) {
         self.data = data
-        self.children = children
+        self.childSource = .provider(children)
         self._selection = selection
         self.separatorInsets = separatorInsets
-        self.separatorVisibility = .visible
+        self.separatorVisibility = separatorInsets == nil ? .hidden : .visible
         self.content = content
     }
 
     public func makeNSViewController(context: Context) -> OutlineViewController<Data, Drop> {
         let controller = OutlineViewController<Data, Drop>(
             data: data,
-            children: children,
+            childrenSource: childSource,
             content: content,
             selectionChanged: { selection = $0 },
             separatorInsets: separatorInsets)

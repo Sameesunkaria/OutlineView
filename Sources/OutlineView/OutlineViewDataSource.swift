@@ -6,11 +6,11 @@ where Drop.DataElement == Data.Element {
     var items: [OutlineViewItem<Data>]
     var dropReceiver: Drop?
     var dragWriter: OutlineView<Data, Drop>.DragSourceWriter?
-    let childrenPath: KeyPath<Data.Element, Data?>
+    let childrenSource: ChildSource<Data>
 
-    init(items: [OutlineViewItem<Data>], children: KeyPath<Data.Element, Data?>) {
+    init(items: [OutlineViewItem<Data>], childSource: ChildSource<Data>) {
         self.items = items
-        self.childrenPath = children
+        self.childrenSource = childSource
     }
 
     private func typedItem(_ item: Any) -> OutlineViewItem<Data> {
@@ -101,11 +101,11 @@ where Drop.DataElement == Data.Element {
         case .deny:
             return []
         case let .copyRedirect(item, childIndex):
-            let redirectTarget = item.map { OutlineViewItem<Data>(value: $0, children: childrenPath) }
+            let redirectTarget = item.map { OutlineViewItem<Data>(value: $0, children: childrenSource) }
             outlineView.setDropItem(redirectTarget, dropChildIndex: childIndex ?? NSOutlineViewDropOnItemIndex)
             return .copy
         case let .moveRedirect(item, childIndex):
-            let redirectTarget = item.map { OutlineViewItem<Data>(value: $0, children: childrenPath) }
+            let redirectTarget = item.map { OutlineViewItem<Data>(value: $0, children: childrenSource) }
             outlineView.setDropItem(redirectTarget, dropChildIndex: childIndex ?? NSOutlineViewDropOnItemIndex)
             return .move
         }
