@@ -9,36 +9,10 @@ import SwiftUI
 import OutlineView
 import Cocoa
 
-var sampleData: [FileItem] {
-    [
-        FileItem(name: "doc001.txt"),
-        FileItem(
-            name: "users",
-            children: [
-                FileItem(
-                    name: "user1234",
-                    children: [
-                        FileItem(
-                            name: "Photos",
-                            children: [
-                                FileItem(name: "photo001.jpg"),
-                                FileItem(name: "photo002.jpg")]),
-                        FileItem(
-                            name: "Movies",
-                            children: [FileItem(name: "movie001.mp4")]),
-                        FileItem(name: "Documents", children: [])]),
-                FileItem(
-                    name: "newuser",
-                    children: [FileItem(name: "Documents", children: [])])
-            ]
-        )
-    ]
-}
-
 struct ContentView: View {
     @Environment(\.colorScheme) var colorScheme
 
-    @StateObject var dataSource = OutlineSampleViewModel(data: sampleData)
+    @StateObject var dataSource = sampleDataSource()
     @State var selection: FileItem?
     @State var separatorColor: Color = Color(NSColor.separatorColor)
     @State var separatorEnabled = false
@@ -58,8 +32,8 @@ struct ContentView: View {
 
     var outlineView: some View {
         OutlineView(
-            dataSource.data,
-            children: \.children,
+            dataSource.rootData,
+            children: dataSource.childrenOfItem,
             selection: $selection,
             separatorInsets: { fileItem in
                 NSEdgeInsets(

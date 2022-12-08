@@ -8,28 +8,79 @@
 import Cocoa
 import OutlineView
 
+func sampleDataSource() -> OutlineSampleViewModel {
+    let fido = FileItem(fileName: "Fido")
+    let chip = FileItem(fileName: "Chip")
+    let rover = FileItem(fileName: "Rover")
+    let spot = FileItem(fileName: "Spot")
+    
+    let fluffy = FileItem(fileName: "Fluffy")
+    let fang = FileItem(fileName: "Fang")
+    let tootsie = FileItem(fileName: "Tootsie")
+    let milo = FileItem(fileName: "Milo")
+    
+    let bart = FileItem(fileName: "Bart")
+    let leo = FileItem(fileName: "Leo")
+    let lucy = FileItem(fileName: "Lucy")
+    let dia = FileItem(fileName: "Dia")
+    let templeton = FileItem(fileName: "Templeton")
+    let chewy = FileItem(fileName: "Chewy")
+    let pizza = FileItem(fileName: "Pizza")
+    
+    let dogsFolder = FileItem(folderName: "Dogs")
+    let catsFolder = FileItem(folderName: "Cats")
+    let otherFolder = FileItem(folderName: "Other")
+    let ratsFolder = FileItem(folderName: "Rats")
+    let fishFolder = FileItem(folderName: "Fish")
+    let turtlesFolder = FileItem(folderName: "Turtles")
+    
+    let roots = [
+        dogsFolder,
+        catsFolder,
+        otherFolder
+    ]
+    
+    let childDirectory = [
+        dogsFolder: [fido, chip, rover, spot],
+        catsFolder: [fluffy, fang, tootsie, milo],
+        otherFolder: [ratsFolder, fishFolder, turtlesFolder, chewy, pizza],
+        ratsFolder: [templeton, leo, bart],
+        fishFolder: [dia, lucy],
+        turtlesFolder: []
+    ]
+    let childlessItems = [fido, chip, rover, spot, fluffy, fang, tootsie, milo, bart, leo, lucy, dia, templeton, chewy, pizza]
+    let theChilds = childDirectory.map { ($0.key, $0.value) } + childlessItems.map { ($0, nil) }
+    
+    return OutlineSampleViewModel(rootData: roots, childrenDirectory: theChilds)
+}
+
 extension NSPasteboard.PasteboardType {
     static var outlineViewItem: Self {
         .init("OutlineView.OutlineItem")
     }
 }
 
-class FileItem: Hashable, Identifiable, CustomStringConvertible {
+struct FileItem: Hashable, Identifiable, CustomStringConvertible {
     var id = UUID()
     var name: String
-    var children: [FileItem]? = nil
+    var isFolder: Bool
+    
     var description: String {
-        switch children {
-        case nil:
+        if !isFolder {
             return "📄 \(name)"
-        case .some(let children):
-            return children.isEmpty ? "📂 \(name)" : "📁 \(name)"
+        } else {
+            return "📁 \(name)"
         }
     }
     
-    init(name: String, children: [FileItem]? = nil) {
-        self.name = name
-        self.children = children
+    init(folderName: String) {
+        self.name = folderName
+        isFolder = true
+    }
+    
+    init(fileName: String) {
+        self.name = fileName
+        isFolder = false
     }
     
     static func == (lhs: FileItem, rhs: FileItem) -> Bool {
@@ -39,71 +90,47 @@ class FileItem: Hashable, Identifiable, CustomStringConvertible {
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
     }
-    
-    func childWithId(_ searchId: UUID) -> FileItem? {
-        if searchId == id {
-            return self
-        } else if children != nil {
-            for child in children! {
-                if let result = child.childWithId(searchId) {
-                    return result
-                }
-            }
-        }
-        return nil
-    }
-    
+        
 }
 
 class OutlineSampleViewModel: ObservableObject {
     
-    @Published var data: [FileItem]
-    @Published private var parentOfItem: [FileItem.ID : FileItem.ID]
+    @Published var rootData: [FileItem]
+    private var dataAndChildren: [(item: FileItem, children: [FileItem]?)]
     
-    init(data: [FileItem]) {
-        parentOfItem = Self.lineageDirectory(for: data)
-        self.data = data
-        
-        $data.map {
-            Self.lineageDirectory(for: $0)
-        }
-        .assign(to: &$parentOfItem)
+    init(rootData: [FileItem], childrenDirectory: [(FileItem, [FileItem]?)]) {
+        self.dataAndChildren = childrenDirectory
+        self.rootData = rootData
     }
     
-    private static func lineageDirectory(for data: [FileItem]) -> [FileItem.ID : FileItem.ID] {
-        var result: [FileItem.ID : FileItem.ID] = [:]
-        var stack: [FileItem] = data
-        var current: FileItem?
-        repeat {
-            if current == nil {
-                current = stack.popLast()
-            }
-            if let children = current?.children {
-                for child in children {
-                    result[child.id] = current!.id
-                }
-                stack.append(contentsOf: children)
-            }
-            current = nil
-        } while !stack.isEmpty || current != nil
-        return result
+    func childrenOfItem(_ item: FileItem) -> [FileItem]? {
+        getChildrenOfId(item.id)
     }
-
+    
     private func getItemWithId(_ identifier: FileItem.ID) -> FileItem? {
-        for item in data {
-            if let found = item.childWithId(identifier) {
-                return found
-            }
-        }
-        return nil
+        dataAndChildren.first(where: { $0.item.id == identifier })?.item
+    }
+    
+    private func getChildrenOfId(_ identifier: FileItem.ID) -> [FileItem]? {
+        dataAndChildren.first(where: { $0.item.id == identifier })?.children
     }
     
     private func getParentOfId(_ identifier: FileItem.ID) -> FileItem? {
-        parentOfItem[identifier].flatMap { getItemWithId($0) }
+        dataAndChildren.first(where: { $0.children?.map(\.id).contains(identifier) ?? false })?.item
     }
     
-    private func item(_ item: FileItem, isChildOf parent: FileItem) -> Bool {
-        item != parent && parent.childWithId(item.id) != nil
+    private func item(_ item: FileItem, isDescendentOf parent: FileItem) -> Bool {
+        
+        var currentParent = getParentOfId(item.id)
+        while currentParent != nil {
+            if currentParent == parent {
+                return true
+            } else {
+                currentParent = getParentOfId(currentParent!.id)
+            }
+        }
+        
+        return false
     }
     
 }
@@ -133,14 +160,20 @@ extension OutlineSampleViewModel: DropReceiver {
             let filePath = item.string(forType: pasteboardType)
             let fileUrl = filePath.map { URL(fileURLWithPath: $0) }
             let fileName = fileUrl?.standardized.lastPathComponent
-            result = fileName.map { FileItem(name: $0) }
+            let isDirectory = (try? fileUrl?.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory ?? false
+            if isDirectory {
+                result = fileName.map { FileItem(folderName: $0) }
+            } else {
+                result = fileName.map { FileItem(fileName: $0) }
+            }
         case .fileContents:
             let fileData = item.data(forType: pasteboardType) ?? Data()
             let sizeOfData = Int64(fileData.count)
-            result = FileItem(name: ByteCountFormatter.string(fromByteCount: sizeOfData, countStyle: .file))
+            let someFileName = ByteCountFormatter.string(fromByteCount: sizeOfData, countStyle: .file)
+            result = FileItem(fileName: someFileName)
         case .string:
             let stringValue = item.string(forType: pasteboardType)
-            result = stringValue.map { FileItem(name: $0) }
+            result = stringValue.map { FileItem(fileName: $0) }
         default:
             break
         }
@@ -153,6 +186,7 @@ extension OutlineSampleViewModel: DropReceiver {
         else { return .deny }
         
         print("Validate Attempt: -----------------------")
+        print("Dragged Item: \(singleDraggedItem.item.isFolder ? "Folder" : "File") \(singleDraggedItem.item.name)")
         
         if let intoItem = target.intoElement {
             
@@ -163,21 +197,31 @@ extension OutlineSampleViewModel: DropReceiver {
             }
             
             // Moving item into a non-folder
-            if intoItem.children == nil {
+            if !intoItem.isFolder {
                 print("Validate: Drop onto non-folder: DENY")
                 return .deny
             }
             
-            print("Validate: target \(intoItem.name), index \(target.childIndex ?? -1)")
         }
         
-        let targetChildren = target.intoElement?.children ?? data
+        let targetChildren: [FileItem]
+        if target.intoElement == nil {
+            // intoElement == nil means we're dragging into the root
+            targetChildren = rootData
+        } else if let childrenOfObject = getChildrenOfId(target.intoElement!.id) {
+            // intoElement has children, so dragging into a folder
+            targetChildren = childrenOfObject
+        } else {
+            // intoElement has no children... this shouldn't happen
+            print("Validate: drop onto non-folder AGAIN: DENY")
+            return .deny
+        }
         
         // Moving item onto self:
         if !targetChildren.isEmpty,
            let dropIndex = target.childIndex,
            let itemAlreadyAtIndex = targetChildren.firstIndex(of: singleDraggedItem.item),
-           abs(itemAlreadyAtIndex - dropIndex) <= 1
+           itemAlreadyAtIndex == dropIndex || itemAlreadyAtIndex == dropIndex - 1
         {
             print("Validate: Drop on existing self: DENY")
             return .deny
@@ -185,22 +229,24 @@ extension OutlineSampleViewModel: DropReceiver {
         
         // Moving folder into self
         if let targetFolder = target.intoElement,
-           targetFolder.children != nil,
-           item(targetFolder, isChildOf: singleDraggedItem.item)
+           targetFolder.isFolder,
+           item(targetFolder, isDescendentOf: singleDraggedItem.item)
         {
             print("Validate: Dragging folder into itself")
             return .deny
         }
-        print("Validate: no target, index \(target.childIndex ?? -1)")
 
+        print("Validate: target \(target.intoElement?.name ?? "root"), index \(target.childIndex ?? -1)")
         return .move
     }
     
     func acceptDrop(target: DropTarget<FileItem>) -> Bool {
         print("""
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         Dropping \(target.items.count) items onto item \(target.intoElement?.name ?? "root") \
         at index \(target.childIndex ?? -1)
         \(target.items.map { "\($0.item.name): \($0.type.rawValue)" })
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         """)
         return false
     }
