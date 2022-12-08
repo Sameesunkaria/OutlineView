@@ -3,7 +3,7 @@ import AppKit
 
 
 @available(macOS 10.15, *)
-public protocol DropHandler {
+public protocol DropReceiver {
     associatedtype DataElement: Identifiable
     
     var acceptedTypes: [NSPasteboard.PasteboardType] { get }

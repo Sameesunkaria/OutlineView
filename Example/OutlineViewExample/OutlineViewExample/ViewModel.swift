@@ -108,7 +108,7 @@ class OutlineSampleViewModel: ObservableObject {
     
 }
 
-extension OutlineSampleViewModel: DropHandler {
+extension OutlineSampleViewModel: DropReceiver {
     
     var acceptedTypes: [NSPasteboard.PasteboardType] {
         [

@@ -1,10 +1,10 @@
 import Cocoa
 
 @available(macOS 10.15, *)
-class OutlineViewDataSource<Data: Sequence, Drop: DropHandler>: NSObject, NSOutlineViewDataSource
+class OutlineViewDataSource<Data: Sequence, Drop: DropReceiver>: NSObject, NSOutlineViewDataSource
 where Drop.DataElement == Data.Element {
     var items: [OutlineViewItem<Data>]
-    var dropHandler: Drop?
+    var dropReceiver: Drop?
     var dragWriter: OutlineView<Data, Drop>.DragSourceWriter?
     let childrenPath: KeyPath<Data.Element, Data?>
 
@@ -63,13 +63,13 @@ where Drop.DataElement == Data.Element {
     }
     
     private func dropTargetData(dragInfo: NSDraggingInfo, item: Any?, childIndex: Int) -> DropTarget<Data.Element>? {
-        guard let dropHandler = dropHandler,
+        guard let dropReceiver = dropReceiver,
               let pasteboardItems = dragInfo.draggingPasteboard.pasteboardItems,
               !pasteboardItems.isEmpty
         else { return nil }
         
         let decodedItems = pasteboardItems.compactMap {
-            dropHandler.readPasteboard(item: $0)
+            dropReceiver.readPasteboard(item: $0)
         }
         
         let dropTarget = DropTarget<Data.Element>(
@@ -90,7 +90,7 @@ where Drop.DataElement == Data.Element {
         guard let dropTarget = dropTargetData(dragInfo: info, item: item, childIndex: index)
         else { return [] }
         
-        let validationResult = dropHandler!.validateDrop(target: dropTarget)
+        let validationResult = dropReceiver!.validateDrop(target: dropTarget)
 
         switch validationResult {
             
@@ -122,7 +122,7 @@ where Drop.DataElement == Data.Element {
         guard let dropTarget = dropTargetData(dragInfo: info, item: item, childIndex: index)
         else { return false }
         
-        return dropHandler!.acceptDrop(target: dropTarget)
+        return dropReceiver!.acceptDrop(target: dropTarget)
     }
 
 }

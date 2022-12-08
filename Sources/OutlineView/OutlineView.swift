@@ -2,7 +2,7 @@ import SwiftUI
 import Cocoa
 
 @available(macOS 10.15, *)
-public struct OutlineView<Data: Sequence, Drop: DropHandler>: NSViewControllerRepresentable
+public struct OutlineView<Data: Sequence, Drop: DropReceiver>: NSViewControllerRepresentable
 where Drop.DataElement == Data.Element {
     public typealias NSViewControllerType = OutlineViewController<Data, Drop>
 
@@ -31,7 +31,7 @@ where Drop.DataElement == Data.Element {
     var separatorColor: NSColor = .separatorColor
 
     var dragDataSource: DragSourceWriter?
-    var dropHandler: Drop?
+    var dropReceiver: Drop?
     
     /// Creates an outline view from a collection of root data elements and
     /// a key path to its children.
@@ -144,7 +144,7 @@ where Drop.DataElement == Data.Element {
         outlineController.changeSelectedItem(to: selection)
         outlineController.setRowSeparator(visibility: separatorVisibility)
         outlineController.setRowSeparator(color: separatorColor)
-        outlineController.setDropHandler(dropHandler)
+        outlineController.setDropReceiver(dropReceiver)
         outlineController.setDragSourceWriter(dragDataSource)
     }
 }
@@ -195,7 +195,7 @@ public extension OutlineView {
         handler: Drop
     ) -> Self {
         var mutableSelf = self
-        mutableSelf.dropHandler = handler
+        mutableSelf.dropReceiver = handler
         return mutableSelf
     }
     
