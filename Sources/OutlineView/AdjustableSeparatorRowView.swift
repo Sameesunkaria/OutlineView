@@ -32,8 +32,9 @@ final class AdjustableSeparatorRowView: NSTableRowView {
             return Self.originalSeparatorRect?(self) ?? .zero
         }
 
-        guard self.numberOfColumns > 0 else { return .zero }
-        let viewRect = (self.view(atColumn: 0)! as! NSView).frame
+        guard self.numberOfColumns > 0,
+              let viewRect = (self.view(atColumn: 0) as? NSView)?.frame
+        else { return .zero }
 
         // One point thick separator of the width of the first (and only) column.
         let separatorRect = NSRect(
