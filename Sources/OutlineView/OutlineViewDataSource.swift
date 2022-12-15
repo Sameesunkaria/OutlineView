@@ -11,7 +11,21 @@ where Drop.DataElement == Data.Element {
     let childrenSource: ChildSource<Data>
     var currentItemTree: [TreeNode<Data.Element.ID>]
     
-    private var dropExpansionNotificationToken: NSObjectProtocol?
+    private var dropExpansionNotificationToken: NSObjectProtocol? {
+        didSet {
+            // In case the original notification listener doesn't stop itself
+            // as set up in `acceptDrop...`, add this as a backup to end the
+            // notification listener after a short period.
+            if dropExpansionNotificationToken != nil {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    if let token = self.dropExpansionNotificationToken {
+                        NotificationCenter.default.removeObserver(token)
+                    }
+                    self.dropExpansionNotificationToken = nil
+                }
+            }
+        }
+    }
         
     init(items: [OutlineViewItem<Data>], childSource: ChildSource<Data>, dropReceiver: Drop) {
         self.items = items
