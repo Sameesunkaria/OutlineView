@@ -42,6 +42,7 @@ public struct DropTarget<D> {
     public var items: [DraggedItem<D>]
     public var intoElement: D?
     public var childIndex: Int?
+    public var isItemExpanded: ((D) -> Bool)
 }
 
 public enum ValidationResult<D> {

@@ -89,7 +89,7 @@ where Drop.DataElement == Data.Element {
         return writeData
     }
     
-    private func dropTargetData(dragInfo: NSDraggingInfo, item: Any?, childIndex: Int) -> DropTarget<Data.Element>? {
+    private func dropTargetData(in outlineView: NSOutlineView, dragInfo: NSDraggingInfo, item: Any?, childIndex: Int) -> DropTarget<Data.Element>? {
         guard let pasteboardItems = dragInfo.draggingPasteboard.pasteboardItems,
               !pasteboardItems.isEmpty
         else { return nil }
@@ -101,7 +101,11 @@ where Drop.DataElement == Data.Element {
         let dropTarget = DropTarget<Data.Element>(
             items: decodedItems,
             intoElement: item.map(typedItem)?.value,
-            childIndex: childIndex == NSOutlineViewDropOnItemIndex ? nil : childIndex
+            childIndex: childIndex == NSOutlineViewDropOnItemIndex ? nil : childIndex,
+            isItemExpanded: { item in
+                let typed = OutlineViewItem<Data>(value: item, children: self.childrenSource)
+                return outlineView.isItemExpanded(typed)
+            }
         )
         return dropTarget
     }
@@ -113,7 +117,7 @@ where Drop.DataElement == Data.Element {
         proposedChildIndex index: Int
     ) -> NSDragOperation {
         
-        guard let dropTarget = dropTargetData(dragInfo: info, item: item, childIndex: index)
+        guard let dropTarget = dropTargetData(in: outlineView, dragInfo: info, item: item, childIndex: index)
         else { return [] }
         
         let validationResult = dropReceiver.validateDrop(target: dropTarget)
@@ -145,7 +149,7 @@ where Drop.DataElement == Data.Element {
         childIndex index: Int
     ) -> Bool {
         
-        guard let dropTarget = dropTargetData(dragInfo: info, item: item, childIndex: index)
+        guard let dropTarget = dropTargetData(in: outlineView, dragInfo: info, item: item, childIndex: index)
         else { return false }
         
         // Perform `acceptDrop(target:)` to get result of drop
