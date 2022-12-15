@@ -46,9 +46,145 @@ where Drop.DataElement == Data.Element {
     var separatorVisibility: SeparatorVisibility
     var separatorColor: NSColor = .separatorColor
 
-    var dragDataSource: DragSourceWriter?
-    var dropReceiver: Drop?
+    var dragDataSource: DragSourceWriter<Data.Element>?
+    var dropReceiver: Drop
 
+    /// Creates an outline view from a collection of root data elements and
+    /// a key path to its children.
+    ///
+    /// This initializer creates an instance that uniquely identifies views
+    /// across updates based on the identity of the underlying data element.
+    ///
+    /// All generated rows begin in the collapsed state.
+    ///
+    /// Make sure that the identifier of a data element only changes if you
+    /// mean to replace that element with a new element, one with a new
+    /// identity. If the ID of an element changes, then the content view
+    /// generated from that element will lose any current state and animations.
+    ///
+    /// - NOTE: All elements in data should be uniquely identified. Data with
+    /// elements that have a repeated identity are not supported.
+    ///
+    /// - Parameters:
+    ///   - data: A collection of tree-structured, identified data.
+    ///   - children: A key path to a property whose non-`nil` value gives the
+    ///     children of `data`. A non-`nil` but empty value denotes an element
+    ///     capable of having children that's currently childless, such as an
+    ///     empty directory in a file system. On the other hand, if the property
+    ///     at the key path is `nil`, then the outline group treats `data` as a
+    ///     leaf in the tree, like a regular file in a file system.
+    ///   - selection: A binding to a selected value.
+    ///   - dropReceiver: An object conforming to `DropReceiver` that handles
+    ///     drag-and-drop receiving for the OutlineView
+    ///   - separatorInsets: An optional closure that produces row separator lines
+    ///     with the given insets for each item in the outline view. If this closure
+    ///     is not provided (the default), separators are hidden.
+    ///   - content: A closure that produces an `NSView` based on an
+    ///     element in `data`. An `NSTableCellView` subclass is preferred.
+    ///     The `NSView` should return the correct `fittingSize`
+    ///     as it is used to determine the height of the cell.
+    @available(macOS 11.0, *)
+    public init(
+        _ data: Data,
+        children: KeyPath<Data.Element, Data?>,
+        selection: Binding<Data.Element?>,
+        dropReceiver: Drop,
+        separatorInsets: ((Data.Element) -> NSEdgeInsets)? = nil,
+        content: @escaping (Data.Element) -> NSView
+    ) {
+        self.data = data
+        self.childSource = .keyPath(children)
+        self._selection = selection
+        self.dropReceiver = dropReceiver
+        self.separatorInsets = separatorInsets
+        self.separatorVisibility = separatorInsets == nil ? .hidden : .visible
+        self.content = content
+    }
+
+    /// Creates an outline view from a collection of root data elements and
+    /// a closure that provides children to each element.
+    ///
+    /// This initializer creates an instance that uniquely identifies views
+    /// across updates based on the identity of the underlying data element.
+    ///
+    /// All generated rows begin in the collapsed state.
+    ///
+    /// Make sure that the identifier of a data element only changes if you
+    /// mean to replace that element with a new element, one with a new
+    /// identity. If the ID of an element changes, then the content view
+    /// generated from that element will lose any current state and animations.
+    ///
+    /// - NOTE: All elements in data should be uniquely identified. Data with
+    /// elements that have a repeated identity are not supported.
+    ///
+    /// - Parameters:
+    ///   - data: A collection of tree-structured, identified data.
+    ///   - children: A closure whose non-`nil` return value gives the
+    ///     children of `data`. A non-`nil` but empty value denotes an element
+    ///     capable of having children that's currently childless, such as an
+    ///     empty directory in a file system. On the other hand, if the value
+    ///     from the closure is `nil`, then the outline group treats `data` as a
+    ///     leaf in the tree, like a regular file in a file system.
+    ///   - selection: A binding to a selected value.
+    ///   - dropReceiver: An object conforming to `DropReceiver` that handles
+    ///     drag-and-drop receiving for the OutlineView
+    ///   - separatorInsets: An optional closure that produces row separator lines
+    ///     with the given insets for each item in the outline view. If this closure
+    ///     is not provided (the default), separators are hidden.
+    ///   - content: A closure that produces an `NSView` based on an
+    ///     element in `data`. An `NSTableCellView` subclass is preferred.
+    ///     The `NSView` should return the correct `fittingSize`
+    ///     as it is used to determine the height of the cell.
+    @available(macOS 11.0, *)
+    public init(
+        _ data: Data,
+        children: @escaping (Data.Element) -> Data?,
+        selection: Binding<Data.Element?>,
+        dropReceiver: Drop,
+        separatorInsets: ((Data.Element) -> NSEdgeInsets)? = nil,
+        content: @escaping (Data.Element) -> NSView
+    ) {
+        self.data = data
+        self.childSource = .provider(children)
+        self._selection = selection
+        self.dropReceiver = dropReceiver
+        self.separatorInsets = separatorInsets
+        self.separatorVisibility = separatorInsets == nil ? .hidden : .visible
+        self.content = content
+    }
+
+    public func makeNSViewController(context: Context) -> OutlineViewController<Data, Drop> {
+        let controller = OutlineViewController<Data, Drop>(
+            data: data,
+            childrenSource: childSource,
+            content: content,
+            selectionChanged: { selection = $0 },
+            dropReceiver: dropReceiver,
+            separatorInsets: separatorInsets)
+        controller.setIndentation(to: indentation)
+        if #available(macOS 11.0, *) {
+            controller.setStyle(to: style)
+        }
+        return controller
+    }
+
+    public func updateNSViewController(
+        _ outlineController: OutlineViewController<Data, Drop>,
+        context: Context
+    ) {
+        outlineController.updateData(newValue: data)
+        outlineController.changeSelectedItem(to: selection)
+        outlineController.setRowSeparator(visibility: separatorVisibility)
+        outlineController.setRowSeparator(color: separatorColor)
+        outlineController.setDragSourceWriter(dragDataSource)
+    }
+}
+
+// MARK: - Extra Initializers
+
+@available(macOS 10.15, *)
+public extension OutlineView where Drop == NoDropReceiver<Data.Element> {
+    
     /// Creates an outline view from a collection of root data elements and
     /// a key path to its children.
     ///
@@ -82,16 +218,17 @@ where Drop.DataElement == Data.Element {
     ///     The `NSView` should return the correct `fittingSize`
     ///     as it is used to determine the height of the cell.
     @available(macOS 11.0, *)
-    public init(
+    init(
         _ data: Data,
         children: KeyPath<Data.Element, Data?>,
         selection: Binding<Data.Element?>,
-        separatorInsets: ((Data.Element) -> NSEdgeInsets)?,
+        separatorInsets: ((Data.Element) -> NSEdgeInsets)? = nil,
         content: @escaping (Data.Element) -> NSView
     ) {
         self.data = data
         self.childSource = .keyPath(children)
         self._selection = selection
+        self.dropReceiver = NoDropReceiver()
         self.separatorInsets = separatorInsets
         self.separatorVisibility = separatorInsets == nil ? .hidden : .visible
         self.content = content
@@ -130,47 +267,26 @@ where Drop.DataElement == Data.Element {
     ///     The `NSView` should return the correct `fittingSize`
     ///     as it is used to determine the height of the cell.
     @available(macOS 11.0, *)
-    public init(
+    init(
         _ data: Data,
         children: @escaping (Data.Element) -> Data?,
         selection: Binding<Data.Element?>,
-        separatorInsets: ((Data.Element) -> NSEdgeInsets)?,
+        separatorInsets: ((Data.Element) -> NSEdgeInsets)? = nil,
         content: @escaping (Data.Element) -> NSView
     ) {
         self.data = data
         self.childSource = .provider(children)
         self._selection = selection
+        self.dropReceiver = NoDropReceiver()
         self.separatorInsets = separatorInsets
         self.separatorVisibility = separatorInsets == nil ? .hidden : .visible
         self.content = content
     }
 
-    public func makeNSViewController(context: Context) -> OutlineViewController<Data, Drop> {
-        let controller = OutlineViewController<Data, Drop>(
-            data: data,
-            childrenSource: childSource,
-            content: content,
-            selectionChanged: { selection = $0 },
-            separatorInsets: separatorInsets)
-        controller.setIndentation(to: indentation)
-        if #available(macOS 11.0, *) {
-            controller.setStyle(to: style)
-        }
-        return controller
-    }
-
-    public func updateNSViewController(
-        _ outlineController: OutlineViewController<Data, Drop>,
-        context: Context
-    ) {
-        outlineController.updateData(newValue: data)
-        outlineController.changeSelectedItem(to: selection)
-        outlineController.setRowSeparator(visibility: separatorVisibility)
-        outlineController.setRowSeparator(color: separatorColor)
-        outlineController.setDropReceiver(dropReceiver)
-        outlineController.setDragSourceWriter(dragDataSource)
-    }
+    
 }
+
+// MARK: - Modifiers
 
 @available(macOS 10.15, *)
 public extension OutlineView {
@@ -208,18 +324,10 @@ public extension OutlineView {
     /// <#Description#>
     /// - Parameter writer: <#writer description#>
     /// - Returns: <#description#>
-    func dragDataSource(_ writer: @escaping DragSourceWriter) -> Self {
+    func dragDataSource(_ writer: @escaping DragSourceWriter<Data.Element>) -> Self {
         var mutableSelf = self
         mutableSelf.dragDataSource = writer
         return mutableSelf
     }
-    
-    func acceptDrops(
-        handler: Drop
-    ) -> Self {
-        var mutableSelf = self
-        mutableSelf.dropReceiver = handler
-        return mutableSelf
-    }
-    
+        
 }

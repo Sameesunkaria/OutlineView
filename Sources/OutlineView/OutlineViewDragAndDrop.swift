@@ -15,10 +15,26 @@ public protocol DropReceiver {
 }
 
 @available(macOS 10.15, *)
-public extension OutlineView {
-    typealias DragSourceWriter = (Data.Element) -> NSPasteboardItem?
+public struct NoDropReceiver<Element: Identifiable>: DropReceiver {
+    public typealias DataElement = Element
+    
+    public var acceptedTypes: [NSPasteboard.PasteboardType] { [] }
+    
+    public func readPasteboard(item: NSPasteboardItem) -> DraggedItem<Element>? {
+        nil
+    }
+    
+    public func validateDrop(target: DropTarget<Element>) -> ValidationResult<Element> {
+        .deny
+    }
+    
+    public func acceptDrop(target: DropTarget<Element>) -> Bool {
+        false
+    }
+
 }
 
+public typealias DragSourceWriter<D> = (D) -> NSPasteboardItem?
 public typealias DraggedItem<D> = (item: D, type: NSPasteboard.PasteboardType)
 
 @available(macOS 10.15, *)

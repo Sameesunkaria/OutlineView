@@ -11,12 +11,14 @@ where Drop.DataElement == Data.Element {
     let updater = OutlineViewUpdater<Data>()
 
     let childrenSource: ChildSource<Data>
+    let dropReceiver: Drop
 
     init(
         data: Data,
         childrenSource: ChildSource<Data>,
         content: @escaping (Data.Element) -> NSView,
         selectionChanged: @escaping (Data.Element?) -> Void,
+        dropReceiver: Drop,
         separatorInsets: ((Data.Element) -> NSEdgeInsets)?
     ) {
         scrollView.documentView = outlineView
@@ -35,7 +37,8 @@ where Drop.DataElement == Data.Element {
 
         dataSource = OutlineViewDataSource(
             items: data.map { OutlineViewItem(value: $0, children: childrenSource) },
-            childSource: childrenSource
+            childSource: childrenSource,
+            dropReceiver: dropReceiver
         )
         delegate = OutlineViewDelegate(
             content: content,
@@ -45,6 +48,9 @@ where Drop.DataElement == Data.Element {
         outlineView.delegate = delegate
 
         self.childrenSource = childrenSource
+        
+        self.dropReceiver = dropReceiver
+        outlineView.registerForDraggedTypes(dropReceiver.acceptedTypes)
 
         super.init(nibName: nil, bundle: nil)
 
@@ -83,7 +89,7 @@ extension OutlineViewController {
 
         outlineView.beginUpdates()
 
-        let oldState = dataSource.items
+        let oldState = dataSource.currentItemTree
         dataSource.items = newState
         updater.performUpdates(
             outlineView: outlineView,
@@ -126,16 +132,8 @@ extension OutlineViewController {
         outlineView.gridColor = color
         outlineView.reloadData()
     }
-    
-    func setDropReceiver(_ handler: Drop?) {
-        outlineView.unregisterDraggedTypes()
-        if let handlers = handler {
-            outlineView.registerForDraggedTypes(handlers.acceptedTypes)
-        }
-        dataSource.dropReceiver = handler
-    }
-    
-    func setDragSourceWriter(_ writer: OutlineView<Data, Drop>.DragSourceWriter?) {
+        
+    func setDragSourceWriter(_ writer: DragSourceWriter<Data.Element>?) {
         dataSource.dragWriter = writer
     }
 }

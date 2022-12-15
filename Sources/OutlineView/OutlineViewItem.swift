@@ -16,6 +16,14 @@ where Data.Element: Identifiable {
         childSource.children(for: value)?.map { OutlineViewItem(value: $0, children: childSource) }
     }
 
+    init(value: Data.Element, children: KeyPath<Data.Element, Data?>) {
+        self.init(value: value, children: .keyPath(children))
+    }
+    
+    init(value: Data.Element, children: @escaping (Data.Element) -> Data?) {
+        self.init(value: value, children: .provider(children))
+    }
+    
     init(value: Data.Element, children: ChildSource<Data>) {
         self.value = value
         self.childSource = children
@@ -35,4 +43,16 @@ where Data.Element: Identifiable {
     func hash(into hasher: inout Hasher) {
         hasher.combine(value.id)
     }
+    
+    func idTree() -> TreeNode<ID> {
+        let selfNode = TreeNode(value: id)
+        if children != nil {
+            selfNode.setIsLeaf(false)
+            if let childNodes = children?.map({ $0.idTree() }) {
+                selfNode.addChildren(childNodes)
+            }
+        }
+        return selfNode
+    }
+            
 }

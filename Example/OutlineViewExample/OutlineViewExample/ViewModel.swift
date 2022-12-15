@@ -248,7 +248,57 @@ extension OutlineSampleViewModel: DropReceiver {
         \(target.items.map { "\($0.item.name): \($0.type.rawValue)" })
         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         """)
-        return false
+        
+        let movedItem = target.items[0].item
+        
+        // get existing index of moved item in order to remove it before re-inserting to target
+        let previousIndex: (FileItem?, Int)?
+        if let rootIndex = rootData.firstIndex(of: movedItem) {
+            previousIndex = (nil, rootIndex)
+        } else if let (parent, siblings) = dataAndChildren.first(where: { $0.children?.contains(movedItem) ?? false }) {
+            previousIndex = (parent, siblings!.firstIndex(of: movedItem)!)
+        } else {
+            previousIndex = nil
+        }
+        
+        var subtractFromInsertIndex = false
+        if let previousIndex {
+            // Remove previous item.
+            if previousIndex.0 == nil {
+                rootData.remove(at: previousIndex.1)
+            } else {
+                let idx = dataAndChildren.firstIndex(where: { $0.item.id == previousIndex.0!.id })!
+                dataAndChildren[idx].children?.remove(at: previousIndex.1)
+            }
+            if previousIndex.0 == target.intoElement,
+               (target.childIndex ?? -1) > previousIndex.1
+            {
+                subtractFromInsertIndex = true
+            }
+        }
+        
+        if let intoItem = target.intoElement,
+           let dataChildIndex = dataAndChildren.firstIndex(where: { $0.item.id == intoItem.id })
+        {
+            // Dropping into a folder
+            if let basicIndex = target.childIndex {
+                let insertIndex = basicIndex - (subtractFromInsertIndex ? 1 : 0)
+                dataAndChildren[dataChildIndex].children?.insert(movedItem, at: insertIndex)
+            } else {
+                dataAndChildren[dataChildIndex].children?.append(movedItem)
+            }
+        } else if target.intoElement == nil {
+            // Dropping into Root
+            if let basicIndex = target.childIndex {
+                let insertIndex = basicIndex - (subtractFromInsertIndex ? 1 : 0)
+                rootData.insert(movedItem, at: insertIndex)
+            } else {
+                rootData.append(movedItem)
+            }
+        }
+        
+        objectWillChange.send()
+        return true
     }
     
 }

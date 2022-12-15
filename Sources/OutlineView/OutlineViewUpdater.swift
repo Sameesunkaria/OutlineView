@@ -9,7 +9,7 @@ where Data.Element: Identifiable {
     ///  `OutlineViewDataSource.items` should be updated to the new state before calling this method.
     func performUpdates(
         outlineView: NSOutlineView,
-        oldState: [OutlineViewItem<Data>]?,
+        oldState: [TreeNode<Data.Element.ID>]?,
         newState: [OutlineViewItem<Data>]?,
         parent: OutlineViewItem<Data>?
     ) {
@@ -21,16 +21,23 @@ where Data.Element: Identifiable {
             return
         }
 
-        let diff = newNonOptionalState.difference(
-            from: oldNonOptionalState, by: { $0.value.id == $1.value.id })
+        let oldIds = oldState?.map { $0.value }
+        let newIds = newNonOptionalState.map { $0.id }
+        let diff = newIds.difference(from: oldIds ?? [])
 
-        if !diff.isEmpty || oldState != newState {
+        if !diff.isEmpty || oldIds != newIds {
             // Parent needs to be update as the children have changed.
             // Children are not reloaded to allow animation.
             outlineView.reloadItem(parent, reloadChildren: false)
         }
+        
+        if !outlineView.isItemExpanded(parent) {
+            // Another early exit. If item isn't expanded, no need to compare its children.
+            // They'll be updated when the item is later expanded.
+            return
+        }
 
-        var removedElements = [OutlineViewItem<Data>]()
+        var removedElements = [TreeNode<Data.Element.ID>]()
 
         for change in diff {
             switch change {
@@ -41,7 +48,8 @@ where Data.Element: Identifiable {
                     withAnimation: .effectFade)
 
             case .remove(offset: let offset, element: let element, _):
-                removedElements.append(element)
+                let removedElement = oldNonOptionalState.first(where: { $0.value == element })!
+                removedElements.append(removedElement)
                 outlineView.removeItems(
                     at: IndexSet([offset]),
                     inParent: parent,
@@ -49,8 +57,8 @@ where Data.Element: Identifiable {
             }
         }
 
-        var oldUnchangedElements = oldNonOptionalState.dictionaryFromIdentity()
-        removedElements.forEach { oldUnchangedElements.removeValue(forKey: $0.id) }
+        var oldUnchangedElements = oldNonOptionalState.reduce(into: [:], { $0[$1.value] = $1 })
+        removedElements.forEach { oldUnchangedElements.removeValue(forKey: $0.value) }
 
         let newStateDict = newNonOptionalState.dictionaryFromIdentity()
 

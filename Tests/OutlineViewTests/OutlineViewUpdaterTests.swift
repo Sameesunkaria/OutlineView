@@ -30,9 +30,11 @@ class OutlineViewUpdaterTests: XCTestCase {
         let outlineView = TestOutlineView()
         let updater = OutlineViewUpdater<[TestItem]>()
 
+        let oldIds = oldState.map { $0.idTree() }
+        
         updater.performUpdates(
             outlineView: outlineView,
-            oldState: oldState,
+            oldState: oldIds,
             newState: newState,
             parent: nil)
 
