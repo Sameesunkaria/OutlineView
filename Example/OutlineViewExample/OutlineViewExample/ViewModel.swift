@@ -235,6 +235,21 @@ extension OutlineSampleViewModel: DropReceiver {
             print("Validate: Dragging folder into itself")
             return .deny
         }
+        
+        if target.intoElement == nil,
+           target.childIndex == nil
+        {
+            print("Validate: into root with no index")
+            return .moveRedirect(item: nil, childIndex: rootData.count)
+        }
+        
+        if target.intoElement != nil,
+           !target.isItemExpanded(target.intoElement!),
+           target.childIndex != nil
+        {
+            print("Validate, dragging into unexpanded target...")
+            return .moveRedirect(item: target.intoElement, childIndex: nil)
+        }
 
         print("Validate: target \(target.intoElement?.name ?? "root"), index \(target.childIndex ?? -1)")
         return .move
