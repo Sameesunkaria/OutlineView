@@ -159,7 +159,7 @@ extension OutlineSampleViewModel: DropReceiver {
             result = decodedId.flatMap { getItemWithId($0) }
         case .fileURL:
             let filePath = item.string(forType: pasteboardType)
-            let fileUrl = filePath.map { URL(fileURLWithPath: $0) }
+            let fileUrl = filePath.flatMap { URL(string: $0) }
             let fileName = fileUrl?.standardized.lastPathComponent
             let isDirectory = (try? fileUrl?.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory ?? false
             if isDirectory {
@@ -183,28 +183,27 @@ extension OutlineSampleViewModel: DropReceiver {
     }
 
     func validateDrop(target: DropTarget<FileItem>) -> ValidationResult<FileItem> {
+        
+        // Only dragging first item. Haven't dealt with how to handle multi-drags
         guard let singleDraggedItem = target.items.first
         else { return .deny }
-        
-        print("Validate Attempt: -----------------------")
-        print("Dragged Item: \(singleDraggedItem.item.isFolder ? "Folder" : "File") \(singleDraggedItem.item.name)")
-        
+                
+        // Moving item into existing object?
         if let intoItem = target.intoElement {
-            
-            // Moving item into existing object
-            if intoItem == singleDraggedItem.item {
-                print("Validate: drop onto self: DENY")
+
+            // Moving item into itself? Deny
+            guard intoItem != singleDraggedItem.item else {
                 return .deny
             }
             
-            // Moving item into a non-folder
-            if !intoItem.isFolder {
-                print("Validate: Drop onto non-folder: DENY")
+            // Moving item into a non-folder? Deny.
+            guard intoItem.isFolder else {
                 return .deny
             }
             
         }
         
+        // Calculate existing array of items we're dropping into
         let targetChildren: [FileItem]
         if target.intoElement == nil {
             // intoElement == nil means we're dragging into the root
@@ -214,56 +213,47 @@ extension OutlineSampleViewModel: DropReceiver {
             targetChildren = childrenOfObject
         } else {
             // intoElement has no children... this shouldn't happen
-            print("Validate: drop onto non-folder AGAIN: DENY")
             return .deny
         }
         
-        // Moving item onto self:
+        // Deny moving item onto itself:
         if !targetChildren.isEmpty,
            let dropIndex = target.childIndex,
            let itemAlreadyAtIndex = targetChildren.firstIndex(of: singleDraggedItem.item),
            itemAlreadyAtIndex == dropIndex || itemAlreadyAtIndex == dropIndex - 1
         {
-            print("Validate: Drop on existing self: DENY")
             return .deny
         }
         
-        // Moving folder into self
+        // Deny moving folder into itself or one of its sub-directories
         if let targetFolder = target.intoElement,
            targetFolder.isFolder,
            item(targetFolder, isDescendentOf: singleDraggedItem.item)
         {
-            print("Validate: Dragging folder into itself")
             return .deny
         }
         
+        // If moving into root, and no childIndex given, redirect to end of root
         if target.intoElement == nil,
            target.childIndex == nil
         {
-            print("Validate: into root with no index")
             return .moveRedirect(item: nil, childIndex: rootData.count)
         }
         
+        // If moving into an unexpanded target folder but has a given child index,
+        // redirect to remove the childIndex and add to the end of that folder's children.
         if target.intoElement != nil,
            !target.isItemExpanded(target.intoElement!),
            target.childIndex != nil
         {
-            print("Validate, dragging into unexpanded target...")
             return .moveRedirect(item: target.intoElement, childIndex: nil)
         }
 
-        print("Validate: target \(target.intoElement?.name ?? "root"), index \(target.childIndex ?? -1)")
+        // All tests have passed, so validate the move as is.
         return .move
     }
     
     func acceptDrop(target: DropTarget<FileItem>) -> Bool {
-        print("""
-        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        Dropping \(target.items.count) items onto item \(target.intoElement?.name ?? "root") \
-        at index \(target.childIndex ?? -1)
-        \(target.items.map { "\($0.item.name): \($0.type.rawValue)" })
-        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        """)
         
         let movedItem = target.items[0].item
         
@@ -277,7 +267,9 @@ extension OutlineSampleViewModel: DropReceiver {
             previousIndex = nil
         }
         
-        var subtractFromInsertIndex = false
+        // if an item is moved to a higher index in the same folder as it came from,
+        // we need to subtract 1 from the insertion index when inserting after this step
+        var subtractFromInsertIndex = 0
         if let previousIndex {
             // Remove previous item.
             if previousIndex.0 == nil {
@@ -287,9 +279,10 @@ extension OutlineSampleViewModel: DropReceiver {
                 dataAndChildren[idx].children?.remove(at: previousIndex.1)
             }
             if previousIndex.0 == target.intoElement,
-               (target.childIndex ?? -1) > previousIndex.1
+               let newIndex = target.childIndex,
+               newIndex > previousIndex.1
             {
-                subtractFromInsertIndex = true
+                subtractFromInsertIndex = 1
             }
         }
         
@@ -298,7 +291,7 @@ extension OutlineSampleViewModel: DropReceiver {
         {
             // Dropping into a folder
             if let basicIndex = target.childIndex {
-                let insertIndex = basicIndex - (subtractFromInsertIndex ? 1 : 0)
+                let insertIndex = basicIndex - subtractFromInsertIndex
                 dataAndChildren[dataChildIndex].children?.insert(movedItem, at: insertIndex)
             } else {
                 dataAndChildren[dataChildIndex].children?.append(movedItem)
@@ -306,11 +299,16 @@ extension OutlineSampleViewModel: DropReceiver {
         } else if target.intoElement == nil {
             // Dropping into Root
             if let basicIndex = target.childIndex {
-                let insertIndex = basicIndex - (subtractFromInsertIndex ? 1 : 0)
+                let insertIndex = basicIndex - subtractFromInsertIndex
                 rootData.insert(movedItem, at: insertIndex)
             } else {
                 rootData.append(movedItem)
             }
+        }
+        
+        // Update dataAndChildren if object was added from outside:
+        if dataAndChildren.firstIndex(where: { $0.item.id == movedItem.id }) == nil {
+            dataAndChildren.append((movedItem, movedItem.isFolder ? [] : nil))
         }
         
         objectWillChange.send()
