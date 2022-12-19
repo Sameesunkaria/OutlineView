@@ -8,7 +8,7 @@
 import SwiftUI
 
 @main
-struct OutlineViewExampleApp: App {
+struct OutlineViewDraggingExampleApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
