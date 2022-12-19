@@ -1,43 +1,58 @@
 import Cocoa
+import Combine
 
 @available(macOS 10.15, *)
 class OutlineViewDataSource<Data: Sequence, Drop: DropReceiver>: NSObject, NSOutlineViewDataSource
 where Drop.DataElement == Data.Element {
-    var items: [OutlineViewItem<Data>] {
-        didSet { self.currentItemTree = Self.buildTree(items: items) }
-    }
+    var items: [OutlineViewItem<Data>]
     var dropReceiver: Drop
     var dragWriter: DragSourceWriter<Data.Element>?
     let childrenSource: ChildSource<Data>
-    var currentItemTree: [TreeNode<Data.Element.ID>]
     
-    private var dropExpansionNotificationToken: NSObjectProtocol? {
+    var treeMap: TreeMap<Data.Element.ID>
+    
+    private var dropExpansionNotificationToken: AnyCancellable? {
         didSet {
             // In case the original notification listener doesn't stop itself
             // as set up in `acceptDrop...`, add this as a backup to end the
             // notification listener after a short period.
             if dropExpansionNotificationToken != nil {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    if let token = self.dropExpansionNotificationToken {
-                        NotificationCenter.default.removeObserver(token)
-                    }
                     self.dropExpansionNotificationToken = nil
                 }
             }
         }
     }
+    private var willExpandToken: AnyCancellable?
+    private var didCollapseToken: AnyCancellable?
         
     init(items: [OutlineViewItem<Data>], childSource: ChildSource<Data>, dropReceiver: Drop) {
         self.items = items
         self.childrenSource = childSource
-        self.currentItemTree = Self.buildTree(items: items)
         self.dropReceiver = dropReceiver
+        
+        treeMap = TreeMap()
+        for item in items {
+            treeMap.addItem(item.value.id, isLeaf: item.children == nil, intoItem: nil, atIndex: nil)
+        }
+        
+        super.init()
+        
+        // Listen for expand/collapse notifications in order to keep TreeMap up to date
+        willExpandToken = NotificationCenter.default.publisher(for: NSOutlineView.itemWillExpandNotification)
+            .receive(on: DispatchQueue.main)
+            .compactMap { NSOutlineView.expansionNotificationInfo($0) }
+            .sink(receiveValue: receiveItemWillExpandNotification)
+        didCollapseToken = NotificationCenter.default.publisher(for: NSOutlineView.itemDidCollapseNotification)
+            .receive(on: DispatchQueue.main)
+            .compactMap { NSOutlineView.expansionNotificationInfo($0) }
+            .sink(receiveValue: receiveItemDidCollapseNotification)
+    }
+        
+    func rebuildIdTree(rootItems: [OutlineViewItem<Data>], outlineView: NSOutlineView) {
+        treeMap = TreeMap(rootItems: rootItems, itemIsExpanded: { outlineView.isItemExpanded($0) })
     }
     
-    private static func buildTree(items: [OutlineViewItem<Data>]) -> [TreeNode<Data.Element.ID>] {
-        items.map { $0.idTree() }
-    }
-
     private func typedItem(_ item: Any) -> OutlineViewItem<Data> {
         item as! OutlineViewItem<Data>
     }
@@ -164,40 +179,48 @@ where Drop.DataElement == Data.Element {
         if res,
            !outlineView.isItemExpanded(item)
         {
-            if dropExpansionNotificationToken != nil {
-                NotificationCenter.default.removeObserver(dropExpansionNotificationToken!)
-            }
-            dropExpansionNotificationToken = NotificationCenter.default.addObserver(
-                forName: NSOutlineView.itemDidExpandNotification,
-                object: outlineView,
-                queue: nil,
-                using: {
-                    self.receiveItemDidExpandNotification($0)
-                }
-            )
+            dropExpansionNotificationToken = NotificationCenter.default
+                .publisher(for: NSOutlineView.itemDidExpandNotification, object: outlineView)
+                .compactMap { NSOutlineView.expansionNotificationInfo($0) }
+                .receive(on: DispatchQueue.main)
+                .sink(receiveValue: receiveItemDidExpandNotification)
         }
         
         return res
     }
     
     // MARK: - Helper Functions
-    
-    private func receiveItemDidExpandNotification(_ note: Notification) {
-        guard let outlineView = note.object as? NSOutlineView,
-              let objectThatExpanded = note.userInfo?["NSObject"]
-        else { return }
         
+    private func receiveItemDidExpandNotification(outlineView: NSOutlineView, expandedObject: Any) {
         // Notification only needs to be received once, so release the observer
-        NotificationCenter.default.removeObserver(dropExpansionNotificationToken!)
         dropExpansionNotificationToken = nil
         
         // Reload the item and its children in order to make sure the newly-expanded
         // item displays the correct children after update.
         DispatchQueue.main.async {
-            outlineView.reloadItem(objectThatExpanded, reloadChildren: true)
+            outlineView.reloadItem(expandedObject, reloadChildren: true)
         }
     }
 
+    private func receiveItemWillExpandNotification(outlineView: NSOutlineView, objectToExpand: Any) {
+        guard let outlineDataSource = outlineView.dataSource,
+              outlineDataSource.isEqual(self)
+        else { return }
+        
+        let typedObjToExpand = typedItem(objectToExpand)
+        let childIds = typedObjToExpand.children?.map { ($0.id, $0.children == nil) }
+        treeMap.expandItem(typedObjToExpand.value.id, children: childIds!)
+    }
+    
+    private func receiveItemDidCollapseNotification(outlineView: NSOutlineView, collapsedObject: Any) {
+        guard let outlineDataSource = outlineView.dataSource,
+              outlineDataSource.isEqual(self)
+        else { return }
+        
+        let typedObjThatCollapsed = typedItem(collapsedObject)
+        treeMap.collapseItem(typedObjThatCollapsed.value.id)
+    }
+    
 }
 
 // MARK: - Extra Initializers

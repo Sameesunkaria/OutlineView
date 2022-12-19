@@ -43,16 +43,5 @@ where Data.Element: Identifiable {
     func hash(into hasher: inout Hasher) {
         hasher.combine(value.id)
     }
-    
-    func idTree() -> TreeNode<ID> {
-        let selfNode = TreeNode(value: id)
-        if children != nil {
-            selfNode.setIsLeaf(false)
-            if let childNodes = children?.map({ $0.idTree() }) {
-                selfNode.addChildren(childNodes)
-            }
-        }
-        return selfNode
-    }
-            
+                
 }

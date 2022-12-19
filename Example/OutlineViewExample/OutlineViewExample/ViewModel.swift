@@ -61,9 +61,10 @@ extension NSPasteboard.PasteboardType {
 }
 
 struct FileItem: Hashable, Identifiable, CustomStringConvertible {
-    var id = UUID()
     var name: String
     var isFolder: Bool
+    
+    var id: String { name }
     
     var description: String {
         if !isFolder {
@@ -154,7 +155,7 @@ extension OutlineSampleViewModel: DropReceiver {
         switch pasteboardType {
         case .outlineViewItem:
             let encodedData = item.data(forType: pasteboardType)
-            let decodedId = encodedData.flatMap { try? JSONDecoder().decode(UUID.self, from: $0) }
+            let decodedId = encodedData.flatMap { try? JSONDecoder().decode(String.self, from: $0) }
             result = decodedId.flatMap { getItemWithId($0) }
         case .fileURL:
             let filePath = item.string(forType: pasteboardType)

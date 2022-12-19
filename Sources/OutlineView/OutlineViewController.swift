@@ -89,15 +89,17 @@ extension OutlineViewController {
 
         outlineView.beginUpdates()
 
-        let oldState = dataSource.currentItemTree
         dataSource.items = newState
         updater.performUpdates(
             outlineView: outlineView,
-            oldState: oldState,
+            oldStateTree: dataSource.treeMap,
             newState: newState,
             parent: nil)
 
         outlineView.endUpdates()
+        
+        // After updates, dataSource must rebuild its idTree for future updates
+        dataSource.rebuildIdTree(rootItems: newState, outlineView: outlineView)
     }
 
     func changeSelectedItem(to item: Data.Element?) {
