@@ -321,9 +321,15 @@ public extension OutlineView {
         return mutableSelf
     }
     
-    /// <#Description#>
-    /// - Parameter writer: <#writer description#>
-    /// - Returns: <#description#>
+    /// Enables dragging of rows from the OutlineView by setting the `DragSourceWriter`
+    /// of the OutlineView
+    /// - Parameter writer: A closure that takes the `Data.Element` from a given row of
+    /// the OutlineView, and returns an optional `NSPasteboardItem` with data about the
+    /// item to be dragged. If nil is returned, that row can not be dragged.
+    ///
+    /// The simplest way to create the data for the pasteboard item is to initialize
+    /// the `NSPasteboardItem` and then calling `setData(_:forType:)` or other types
+    /// of `set` functions.
     func dragDataSource(_ writer: @escaping DragSourceWriter<Data.Element>) -> Self {
         var mutableSelf = self
         mutableSelf.dragDataSource = writer
