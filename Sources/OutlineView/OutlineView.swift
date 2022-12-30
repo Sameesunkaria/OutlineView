@@ -2,10 +2,11 @@ import SwiftUI
 import Cocoa
 
 @available(macOS 10.15, *)
-public struct OutlineView<Data: Sequence>: NSViewControllerRepresentable
+public struct OutlineView<ID: Hashable, Data: Sequence>: NSViewControllerRepresentable
 where Data.Element: Identifiable {
-    public typealias NSViewControllerType = OutlineViewController<Data>
+    public typealias NSViewControllerType = OutlineViewController<ID, Data>
 
+    let id: ID
     let data: Data
     let children: KeyPath<Data.Element, Data?>
     @Binding var selection: Data.Element?
@@ -48,6 +49,8 @@ where Data.Element: Identifiable {
     ///
     /// - Parameters:
     ///   - data: A collection of tree-structured, identified data.
+    ///   - id: A unique identifier that can be used to force reloads of the
+    ///     outlineView data by calling `triggerReloadOfOutlineView(id:)`
     ///   - children: A key path to a property whose non-`nil` value gives the
     ///     children of `data`. A non-`nil` but empty value denotes an element
     ///     capable of having children that's currently childless, such as an
@@ -61,10 +64,12 @@ where Data.Element: Identifiable {
     ///     as it is used to determine the height of the cell.
     public init(
         _ data: Data,
+        id: ID,
         children: KeyPath<Data.Element, Data?>,
         selection: Binding<Data.Element?>,
         content: @escaping (Data.Element) -> NSView
     ) {
+        self.id = id
         self.data = data
         self.children = children
         self._selection = selection
@@ -92,6 +97,8 @@ where Data.Element: Identifiable {
     ///
     /// - Parameters:
     ///   - data: A collection of tree-structured, identified data.
+    ///   - id: A unique identifier that can be used to force reloads of the
+    ///     outlineView data by calling `triggerReloadOfOutlineView(id:)`
     ///   - children: A key path to a property whose non-`nil` value gives the
     ///     children of `data`. A non-`nil` but empty value denotes an element
     ///     capable of having children that's currently childless, such as an
@@ -106,11 +113,13 @@ where Data.Element: Identifiable {
     @available(macOS 11.0, *)
     public init(
         _ data: Data,
+        id: ID,
         children: KeyPath<Data.Element, Data?>,
         selection: Binding<Data.Element?>,
         separatorInsets: @escaping (Data.Element) -> NSEdgeInsets,
         content: @escaping (Data.Element) -> NSView
     ) {
+        self.id = id
         self.data = data
         self.children = children
         self._selection = selection
@@ -119,8 +128,9 @@ where Data.Element: Identifiable {
         self.content = content
     }
 
-    public func makeNSViewController(context: Context) -> OutlineViewController<Data> {
+    public func makeNSViewController(context: Context) -> NSViewControllerType {
         let controller = OutlineViewController(
+            id: id,
             data: data,
             children: children,
             content: content,
@@ -134,7 +144,7 @@ where Data.Element: Identifiable {
     }
 
     public func updateNSViewController(
-        _ outlineController: OutlineViewController<Data>,
+        _ outlineController: NSViewControllerType,
         context: Context
     ) {
         outlineController.updateData(newValue: data)

@@ -1,18 +1,22 @@
 import Cocoa
+import Combine
 
 @available(macOS 10.15, *)
-public class OutlineViewController<Data: Sequence>: NSViewController
+public class OutlineViewController<ID: Hashable, Data: Sequence>: NSViewController
 where Data.Element: Identifiable {
+    let id: ID
     let outlineView = NSOutlineView()
     let scrollView = NSScrollView(frame: NSRect(x: 0, y: 0, width: 400, height: 400))
     
     let dataSource: OutlineViewDataSource<Data>
     let delegate: OutlineViewDelegate<Data>
     let updater = OutlineViewUpdater<Data>()
+    var reloadListener: AnyCancellable?
 
     let childrenPath: KeyPath<Data.Element, Data?>
 
     init(
+        id: ID,
         data: Data,
         children: KeyPath<Data.Element, Data?>,
         content: @escaping (Data.Element) -> NSView,
@@ -44,6 +48,7 @@ where Data.Element: Identifiable {
 
         childrenPath = children
 
+        self.id = id
         super.init(nibName: nil, bundle: nil)
 
         view.addSubview(scrollView)
@@ -54,6 +59,13 @@ where Data.Element: Identifiable {
             scrollView.topAnchor.constraint(equalTo: view.topAnchor),
             scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
+        
+        reloadListener = NotificationCenter
+            .default
+            .publisher(for: .OutlineViewReload)
+            .compactMap { $0.outlineId(as: ID.self) }
+            .filter { $0 == id }
+            .sink(receiveValue: { _ in self.reloadRowData(itemIds: nil) })
     }
 
     required init?(coder: NSCoder) {
@@ -124,4 +136,13 @@ extension OutlineViewController {
         outlineView.gridColor = color
         outlineView.reloadData()
     }
+    
+    /// Calls `reloadData()` on the outlineView. Currently does not
+    /// use individual itemIds, although if implemented you could
+    /// reload individual rows. OutlineViewController and DataSource
+    /// would need to be changed in that case.
+    func reloadRowData(itemIds: [Data.Element.ID]?) {
+        outlineView.reloadData()
+    }
+    
 }
