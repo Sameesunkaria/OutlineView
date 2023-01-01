@@ -54,6 +54,11 @@ struct ContentView: View {
     @State var separatorColor: Color = Color(NSColor.separatorColor)
     @State var separatorEnabled = false
 
+    @State var rootTextColor: Color = Color(NSColor.textColor)
+    @State var childTextColor: Color = Color(NSColor.textColor)
+    
+    let outlineId = UUID()
+    
     var body: some View {
         VStack {
             outlineView
@@ -66,10 +71,15 @@ struct ContentView: View {
                 : Color.clear
         )
     }
+    
+    var rootIds: [UUID] {
+        data.map(\.id)
+    }
 
     var outlineView: some View {
         OutlineView(
             data,
+            id: outlineId,
             children: \.children,
             selection: $selection,
             separatorInsets: { fileItem in
@@ -80,16 +90,28 @@ struct ContentView: View {
                     right: 0)
             }
         ) { fileItem in
-            FileItemView(fileItem: fileItem)
+            FileItemView(fileItem: fileItem, textColor: NSColor(rootIds.contains(fileItem.id) ? rootTextColor : childTextColor))
         }
         .outlineViewStyle(.inset)
         .outlineViewIndentation(20)
         .rowSeparator(separatorEnabled ? .visible : .hidden)
         .rowSeparatorColor(NSColor(separatorColor))
+        .onChange(of: rootTextColor) { _ in
+            triggerReloadOfOutlineView(id: outlineId, itemIds: rootIds)
+        }
+        .onChange(of: childTextColor) { _ in
+            triggerReloadOfOutlineView(id: outlineId)
+        }
     }
 
     var configBar: some View {
         HStack {
+            ColorPicker(
+                "Root Text Color:",
+                selection: $rootTextColor)
+            Button(
+                "Set Child Text Color",
+                action: { self.childTextColor = self.rootTextColor })
             Spacer()
             ColorPicker(
                 "Set separator color:",
