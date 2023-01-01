@@ -63,9 +63,11 @@ where Data.Element: Identifiable {
         reloadListener = NotificationCenter
             .default
             .publisher(for: .OutlineViewReload)
-            .compactMap { $0.outlineId(as: ID.self) }
-            .filter { $0 == id }
-            .sink(receiveValue: { _ in self.reloadRowData(itemIds: nil) })
+            .filter { $0.outlineId(as: ID.self) == id }
+            .sink(receiveValue: { note in
+                let itemIds = note.outlineItemIds(as: Data.Element.ID.self)
+                self.reloadRowData(itemIds: itemIds)
+            })
     }
 
     required init?(coder: NSCoder) {
@@ -142,7 +144,33 @@ extension OutlineViewController {
     /// reload individual rows. OutlineViewController and DataSource
     /// would need to be changed in that case.
     func reloadRowData(itemIds: [Data.Element.ID]?) {
-        outlineView.reloadData()
+        
+        // If no itemIds are given, reload everything
+        guard let itemIds,
+              !itemIds.isEmpty
+        else {
+            outlineView.reloadData()
+            return
+        }
+        
+        var itemsToReload = Set(itemIds)
+        let rowCount = outlineView.numberOfRows
+        var currentRow = 0
+        
+        // Reload individual rows while IDs are available
+        while currentRow < rowCount,
+              !itemsToReload.isEmpty
+        {
+            if let rowItem = outlineView.item(atRow: currentRow),
+               let identifiableItem = rowItem as? any Identifiable,
+               let itemId = identifiableItem.id as? Data.Element.ID,
+               itemsToReload.contains(itemId)
+            {
+                outlineView.reloadItem(rowItem)
+                itemsToReload.remove(itemId)
+            }
+            currentRow += 1
+        }
     }
     
 }

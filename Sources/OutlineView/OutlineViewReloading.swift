@@ -20,9 +20,14 @@ public func triggerReloadOfOutlineView<K: Hashable>(id: K) {
     )
 }
 
-/*
- // Could be implemented if OutlineView data source was able to look up
- // data items by ID
+/// Manually forces an OutlineView to reload its row data for a given
+/// group of rows by id, which may be necessary if normal state property
+/// changes don't cause data updates.
+///
+/// - Parameters:
+///   - id: The id of the OutlineView to be reloaded.
+///   - itemIds: Array of ids of items in the `OutlineView` that need to
+///     be reloaded.
 public func triggerReloadOfOutlineView<K: Hashable, L: Hashable>(id: K, itemIds: [L]) {
     NotificationCenter.default.post(
         name: .OutlineViewReload,
@@ -33,7 +38,6 @@ public func triggerReloadOfOutlineView<K: Hashable, L: Hashable>(id: K, itemIds:
         ]
     )
 }
- */
 
 internal extension Notification {
     
@@ -41,10 +45,8 @@ internal extension Notification {
         userInfo?["id"] as? K
     }
     
-    /*
-     // See `triggerReloadOfOutlineView(id:itemIds:)`
     func outlineItemIds<L: Hashable>(as type: L.Type) -> [L]? {
         userInfo?["items"] as? [L]
     }
-     */
+    
 }
