@@ -1,7 +1,6 @@
 import Foundation
 import AppKit
 
-
 /// A protocol for use with `OutlineView`, implemented by an object (most likely
 /// the data source) to handle receiving items that are dragged into the `OutlineView`.
 @available(macOS 10.15, *)
@@ -42,7 +41,6 @@ public protocol DropReceiver {
     ///
     /// - Returns: a boolean indicating that the drop was successful.
     func acceptDrop(target: DropTarget<DataElement>) -> Bool
-    
 }
 
 @available(macOS 10.15, *)
@@ -62,7 +60,6 @@ public struct NoDropReceiver<Element: Identifiable>: DropReceiver {
     public func acceptDrop(target: DropTarget<Element>) -> Bool {
         false
     }
-
 }
 
 public typealias DragSourceWriter<D> = (D) -> NSPasteboardItem?
@@ -72,7 +69,6 @@ public typealias DraggedItem<D> = (item: D, type: NSPasteboard.PasteboardType)
 /// where in the data heirarchy they are being dropped.
 @available(macOS 10.15, *)
 public struct DropTarget<D> {
-    
     /// A non-empty array of `DraggedItem` tuples, each with the item
     /// that is being dragged, and the `NSPasteboard.PasteboardType` that
     /// generated the item from the dragging pasteboard.

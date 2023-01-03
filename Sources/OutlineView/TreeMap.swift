@@ -2,8 +2,8 @@
 /// An object representing the state of an OutlineView in which the content
 /// of the OutlineView is Identifiable. The TreeMap should be able to stay
 /// in sync with the OutlineView by reacting to data updates in the OutlineView.
+@available(macOS 10.15, *)
 class TreeMap<D: Hashable> {
-        
     struct Node {
         var parentId: D?
         var isLeaf: Bool
@@ -18,12 +18,10 @@ class TreeMap<D: Hashable> {
         
     init() {}
     
-    @available(macOS 10.15, *)
     init<Data: Sequence>(
         rootItems: [OutlineViewItem<Data>],
         itemIsExpanded: ((OutlineViewItem<Data>) -> Bool)
     ) where Data.Element: Identifiable, Data.Element.ID == D {
-        
         // Add root items first
         for item in rootItems {
             addItem(item.value.id, isLeaf: item.children == nil, intoItem: nil, atIndex: nil)
@@ -55,7 +53,6 @@ class TreeMap<D: Hashable> {
     ///   end of the array of children for the parent (or root if no
     ///   parent is given).
     func addItem(_ item: D, isLeaf: Bool, intoItem: D?, atIndex: Int?) {
-        
         // Add to parent or root
         if let intoItem {
             // Add to children of selected item
@@ -119,7 +116,6 @@ class TreeMap<D: Hashable> {
     ///
     /// - Parameter item: The ID of the item to remove.
     func removeItem(_ item: D) {
-        
         // Remove all children from tree
         directory[item]?.childIds?.forEach { removeItem($0) }
         
@@ -188,8 +184,8 @@ class TreeMap<D: Hashable> {
     }
 }
 
+@available(macOS 10.15, *)
 extension TreeMap: CustomStringConvertible {
-    
     var description: String {
         var strings: [String] = []
         
@@ -209,15 +205,14 @@ extension TreeMap: CustomStringConvertible {
         }
         return res
     }
-
 }
 
+@available(macOS 10.15, *)
 extension TreeMap.Node: Equatable {}
 
+@available(macOS 10.15, *)
 extension TreeMap: Equatable {
-    
     static func == (lhs: TreeMap<D>, rhs: TreeMap<D>) -> Bool {
         lhs.directory == rhs.directory && lhs.rootData == rhs.rootData
     }
-    
 }

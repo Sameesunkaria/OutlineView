@@ -43,5 +43,4 @@ where Data.Element: Identifiable {
     func hash(into hasher: inout Hasher) {
         hasher.combine(value.id)
     }
-                
 }

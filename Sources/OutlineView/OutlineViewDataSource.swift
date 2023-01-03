@@ -96,15 +96,114 @@ where Drop.DataElement == Data.Element {
         _ outlineView: NSOutlineView,
         pasteboardWriterForItem item: Any
     ) -> NSPasteboardWriting? {
-        
         guard let writer = dragWriter,
               let writeData = writer(typedItem(item).value)
         else { return nil }
         
         return writeData
     }
+        
+    func outlineView(
+        _ outlineView: NSOutlineView,
+        validateDrop info: NSDraggingInfo,
+        proposedItem item: Any?,
+        proposedChildIndex index: Int
+    ) -> NSDragOperation {
+        guard let dropTarget = dropTargetData(in: outlineView, dragInfo: info, item: item, childIndex: index)
+        else { return [] }
+        
+        let validationResult = dropReceiver.validateDrop(target: dropTarget)
+
+        switch validationResult {
+        case .copy:
+            return .copy
+        case .move:
+            return .move
+        case .deny:
+            return []
+        case let .copyRedirect(item, childIndex):
+            let redirectTarget = item.map { OutlineViewItem<Data>(value: $0, children: childrenSource) }
+            outlineView.setDropItem(redirectTarget, dropChildIndex: childIndex ?? NSOutlineViewDropOnItemIndex)
+            return .copy
+        case let .moveRedirect(item, childIndex):
+            let redirectTarget = item.map { OutlineViewItem<Data>(value: $0, children: childrenSource) }
+            outlineView.setDropItem(redirectTarget, dropChildIndex: childIndex ?? NSOutlineViewDropOnItemIndex)
+            return .move
+        }
+    }
+
+    func outlineView(
+        _ outlineView: NSOutlineView,
+        acceptDrop info: NSDraggingInfo,
+        item: Any?,
+        childIndex index: Int
+    ) -> Bool {
+        guard let dropTarget = dropTargetData(in: outlineView, dragInfo: info, item: item, childIndex: index)
+        else { return false }
+        
+        // Perform `acceptDrop(target:)` to get result of drop
+        let dropIsSuccessful = dropReceiver.acceptDrop(target: dropTarget)
+        
+        // If drop was successful, but onto an unexpanded item, a quirk of NSOutlineView
+        // will cause the item to expand with the newly dropped item already in it, which
+        // messes up OutlineViewUpdater's attempt to update the contents of the item (by adding
+        // the dragged items onto items already displayed in the parent item).
+        // To fix this, we briefly listen for itemDidExpandNotification, and reload the item just
+        // after it expands, then cancel our listener.
+        if dropIsSuccessful,
+           !outlineView.isItemExpanded(item)
+        {
+            dropExpansionNotificationToken = NotificationCenter.default
+                .publisher(for: NSOutlineView.itemDidExpandNotification, object: outlineView)
+                .compactMap { NSOutlineView.expansionNotificationInfo($0) }
+                .receive(on: DispatchQueue.main)
+                .sink(receiveValue: receiveItemDidExpandNotification)
+        }
+        
+        return dropIsSuccessful
+    }
+}
+
+// MARK: - Helper Functions
+
+@available(macOS 10.15, *)
+private extension OutlineViewDataSource {
+    func receiveItemDidExpandNotification(outlineView: NSOutlineView, expandedObject: Any) {
+        // Notification only needs to be received once, so release the observer
+        dropExpansionNotificationToken = nil
+        
+        // Reload the item and its children in order to make sure the newly-expanded
+        // item displays the correct children after update.
+        DispatchQueue.main.async {
+            outlineView.reloadItem(expandedObject, reloadChildren: true)
+        }
+    }
+
+    func receiveItemWillExpandNotification(outlineView: NSOutlineView, objectToExpand: Any) {
+        guard let outlineDataSource = outlineView.dataSource,
+              outlineDataSource.isEqual(self)
+        else { return }
+        
+        let typedObjToExpand = typedItem(objectToExpand)
+        let childIds = typedObjToExpand.children?.map { ($0.id, $0.children == nil) }
+        treeMap.expandItem(typedObjToExpand.value.id, children: childIds!)
+    }
     
-    private func dropTargetData(in outlineView: NSOutlineView, dragInfo: NSDraggingInfo, item: Any?, childIndex: Int) -> DropTarget<Data.Element>? {
+    func receiveItemDidCollapseNotification(outlineView: NSOutlineView, collapsedObject: Any) {
+        guard let outlineDataSource = outlineView.dataSource,
+              outlineDataSource.isEqual(self)
+        else { return }
+        
+        let typedObjThatCollapsed = typedItem(collapsedObject)
+        treeMap.collapseItem(typedObjThatCollapsed.value.id)
+    }
+    
+    func dropTargetData(
+        in outlineView: NSOutlineView,
+        dragInfo: NSDraggingInfo,
+        item: Any?,
+        childIndex: Int
+    ) -> DropTarget<Data.Element>? {
         guard let pasteboardItems = dragInfo.draggingPasteboard.pasteboardItems,
               !pasteboardItems.isEmpty
         else { return nil }
@@ -124,110 +223,12 @@ where Drop.DataElement == Data.Element {
         )
         return dropTarget
     }
-    
-    func outlineView(
-        _ outlineView: NSOutlineView,
-        validateDrop info: NSDraggingInfo,
-        proposedItem item: Any?,
-        proposedChildIndex index: Int
-    ) -> NSDragOperation {
-        
-        guard let dropTarget = dropTargetData(in: outlineView, dragInfo: info, item: item, childIndex: index)
-        else { return [] }
-        
-        let validationResult = dropReceiver.validateDrop(target: dropTarget)
-
-        switch validationResult {
-            
-        case .copy:
-            return .copy
-        case .move:
-            return .move
-        case .deny:
-            return []
-        case let .copyRedirect(item, childIndex):
-            let redirectTarget = item.map { OutlineViewItem<Data>(value: $0, children: childrenSource) }
-            outlineView.setDropItem(redirectTarget, dropChildIndex: childIndex ?? NSOutlineViewDropOnItemIndex)
-            return .copy
-        case let .moveRedirect(item, childIndex):
-            let redirectTarget = item.map { OutlineViewItem<Data>(value: $0, children: childrenSource) }
-            outlineView.setDropItem(redirectTarget, dropChildIndex: childIndex ?? NSOutlineViewDropOnItemIndex)
-            return .move
-        }
-        
-    }
-
-    func outlineView(
-        _ outlineView: NSOutlineView,
-        acceptDrop info: NSDraggingInfo,
-        item: Any?,
-        childIndex index: Int
-    ) -> Bool {
-        
-        guard let dropTarget = dropTargetData(in: outlineView, dragInfo: info, item: item, childIndex: index)
-        else { return false }
-        
-        // Perform `acceptDrop(target:)` to get result of drop
-        let res = dropReceiver.acceptDrop(target: dropTarget)
-        
-        // If drop was successful, but onto an unexpanded item, a quirk of NSOutlineView
-        // will cause the item to expand with the newly dropped item already in it, which
-        // messes up OutlineViewUpdater's attempt to update the contents of the item (by adding
-        // the dragged items onto items already displayed in the parent item).
-        // To fix this, we briefly listen for itemDidExpandNotification, and reload the item just
-        // after it expands, then cancel our listener.
-        if res,
-           !outlineView.isItemExpanded(item)
-        {
-            dropExpansionNotificationToken = NotificationCenter.default
-                .publisher(for: NSOutlineView.itemDidExpandNotification, object: outlineView)
-                .compactMap { NSOutlineView.expansionNotificationInfo($0) }
-                .receive(on: DispatchQueue.main)
-                .sink(receiveValue: receiveItemDidExpandNotification)
-        }
-        
-        return res
-    }
-    
-    // MARK: - Helper Functions
-        
-    private func receiveItemDidExpandNotification(outlineView: NSOutlineView, expandedObject: Any) {
-        // Notification only needs to be received once, so release the observer
-        dropExpansionNotificationToken = nil
-        
-        // Reload the item and its children in order to make sure the newly-expanded
-        // item displays the correct children after update.
-        DispatchQueue.main.async {
-            outlineView.reloadItem(expandedObject, reloadChildren: true)
-        }
-    }
-
-    private func receiveItemWillExpandNotification(outlineView: NSOutlineView, objectToExpand: Any) {
-        guard let outlineDataSource = outlineView.dataSource,
-              outlineDataSource.isEqual(self)
-        else { return }
-        
-        let typedObjToExpand = typedItem(objectToExpand)
-        let childIds = typedObjToExpand.children?.map { ($0.id, $0.children == nil) }
-        treeMap.expandItem(typedObjToExpand.value.id, children: childIds!)
-    }
-    
-    private func receiveItemDidCollapseNotification(outlineView: NSOutlineView, collapsedObject: Any) {
-        guard let outlineDataSource = outlineView.dataSource,
-              outlineDataSource.isEqual(self)
-        else { return }
-        
-        let typedObjThatCollapsed = typedItem(collapsedObject)
-        treeMap.collapseItem(typedObjThatCollapsed.value.id)
-    }
-    
 }
 
 // MARK: - Extra Initializers
 
 @available(macOS 10.15, *)
 extension OutlineViewDataSource where Drop == NoDropReceiver<Data.Element> {
-    
     convenience init(items: [OutlineViewItem<Data>], childSource: ChildSource<Data>) {
         self.init(
             items: items,
@@ -235,5 +236,4 @@ extension OutlineViewDataSource where Drop == NoDropReceiver<Data.Element> {
             dropReceiver: NoDropReceiver()
         )
     }
-
 }

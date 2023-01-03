@@ -3,7 +3,6 @@ import Cocoa
 @available(macOS 10.15, *)
 struct OutlineViewUpdater<Data: Sequence>
 where Data.Element: Identifiable {
-    
     /// variable for testing purposes. When set to false (the default),
     /// `performUpdates` will escape its recursion for objects that are not
     /// expanded in the outlineView.
@@ -19,7 +18,6 @@ where Data.Element: Identifiable {
         newState: [OutlineViewItem<Data>]?,
         parent: OutlineViewItem<Data>?
     ) {
-        
         // Get states to compare: oldIds and newIds, as related to the given parent object
         let oldIds: [Data.Element.ID]?
         if let oldStateTree {

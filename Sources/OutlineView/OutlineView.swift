@@ -18,11 +18,9 @@ enum ChildSource<Data: Sequence> {
 @available(macOS 10.15, *)
 public struct OutlineView<Data: Sequence, Drop: DropReceiver>: NSViewControllerRepresentable
 where Drop.DataElement == Data.Element {
-            
     public typealias NSViewControllerType = OutlineViewController<Data, Drop>
 
     let data: Data
-    //let children: KeyPath<Data.Element, Data?>
     let childSource: ChildSource<Data>
     @Binding var selection: Data.Element?
     var content: (Data.Element) -> NSView
@@ -184,7 +182,6 @@ where Drop.DataElement == Data.Element {
 
 @available(macOS 10.15, *)
 public extension OutlineView where Drop == NoDropReceiver<Data.Element> {
-    
     /// Creates an outline view from a collection of root data elements and
     /// a key path to its children.
     ///
@@ -282,15 +279,12 @@ public extension OutlineView where Drop == NoDropReceiver<Data.Element> {
         self.separatorVisibility = separatorInsets == nil ? .hidden : .visible
         self.content = content
     }
-
-    
 }
 
 // MARK: - Modifiers
 
 @available(macOS 10.15, *)
 public extension OutlineView {
-
     /// Sets the style for the `OutlineView`.
     @available(macOS 11.0, *)
     func outlineViewStyle(_ style: NSOutlineView.Style) -> Self {
@@ -335,5 +329,4 @@ public extension OutlineView {
         mutableSelf.dragDataSource = writer
         return mutableSelf
     }
-        
 }
