@@ -25,6 +25,7 @@
 		336C5FEB25CC9F1800230C37 /* OutlineViewExample.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = OutlineViewExample.entitlements; sourceTree = "<group>"; };
 		336C5FFC25CCA8D900230C37 /* FileItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileItemView.swift; sourceTree = "<group>"; };
 		336C600025CCAEDA00230C37 /* OutlineView */ = {isa = PBXFileReference; lastKnownFileType = folder; name = OutlineView; path = ../..; sourceTree = "<group>"; };
+		94899318296309C20018C5EA /* OutlineViewExample.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = OutlineViewExample.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -67,6 +68,7 @@
 				336C5FEA25CC9F1800230C37 /* Info.plist */,
 				336C5FEB25CC9F1800230C37 /* OutlineViewExample.entitlements */,
 				336C5FE725CC9F1800230C37 /* Preview Content */,
+				94899318296309C20018C5EA /* OutlineViewExample.xcconfig */,
 			);
 			path = OutlineViewExample;
 			sourceTree = "<group>";
@@ -169,6 +171,7 @@
 /* Begin XCBuildConfiguration section */
 		336C5FEC25CC9F1800230C37 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 94899318296309C20018C5EA /* OutlineViewExample.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -230,6 +233,7 @@
 		};
 		336C5FED25CC9F1800230C37 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 94899318296309C20018C5EA /* OutlineViewExample.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -291,7 +295,6 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"OutlineViewExample/Preview Content\"";
-				DEVELOPMENT_TEAM = 47YH33JD86;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = OutlineViewExample/Info.plist;
@@ -300,7 +303,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 11.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.samar.OutlineViewExample;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.OutlineViewExample;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 			};
@@ -315,7 +318,6 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"OutlineViewExample/Preview Content\"";
-				DEVELOPMENT_TEAM = 47YH33JD86;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = OutlineViewExample/Info.plist;
@@ -324,7 +326,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 11.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.samar.OutlineViewExample;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.OutlineViewExample;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 			};
