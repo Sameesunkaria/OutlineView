@@ -36,8 +36,7 @@ class TreeMap<D: Hashable> {
         
         // Loop through all items, adding their children if they're expanded
         var checkingItems: [(parentID: D?, item: OutlineViewItem<Data>)] = rootItems.map { (nil, $0) }
-        while !checkingItems.isEmpty {
-            let nextItem = checkingItems.popLast()!.item
+        while let nextItem = checkingItems.popLast()?.item {
             if itemIsExpanded(nextItem),
                let children = nextItem.children
             {
@@ -100,8 +99,7 @@ class TreeMap<D: Hashable> {
     ///   item's children. Each child must have an ID and a boolean
     ///   indicating whether it is a leaf or internal node of the tree.
     func expandItem(_ item: D, children: [(id: D, isLeaf: Bool)]) {
-        guard directory[item] != nil,
-              case .collapsed = directory[item]!.state
+        guard case .collapsed = directory[item]?.state
         else { return }
         
         directory[item]?.state = .expanded(children: children.map(\.id))
@@ -203,9 +201,9 @@ class TreeMap<D: Hashable> {
         
         var result = [item]
         var parent = node.parentID
-        while parent != nil {
-            result.insert(parent!, at: 0)
-            parent = directory[parent!]?.parentID
+        while let nonNilParent = parent {
+            result.insert(nonNilParent, at: 0)
+            parent = directory[nonNilParent]?.parentID
         }
         return result
     }
@@ -224,7 +222,11 @@ extension TreeMap: CustomStringConvertible {
     }
     
     private func descriptionStrings(for item: D) -> [String] {
-        let depth = lineageOfItem(item)!.count
+        guard let depth = lineageOfItem(item)?.count
+        else {
+            assertionFailure("Cannot call `descriptionStrings(for:)` on item not in the TreeMap")
+            return []
+        }
         let selfDescription = "\(String(repeating: "- ", count: depth))\(item)"
         var res: [String] = [selfDescription]
         if case let .expanded(childIDs) = directory[item]?.state {
