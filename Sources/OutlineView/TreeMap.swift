@@ -11,11 +11,11 @@ class TreeMap<D: Hashable> {
             case expanded(children: [D])
         }
 
-        var parentId: D?
+        var parentID: D?
         var state: State
         
-        init(parentId: D?, isLeaf: Bool) {
-            self.parentId = parentId
+        init(parentID: D?, isLeaf: Bool) {
+            self.parentID = parentID
             self.state = isLeaf ? .leaf : .collapsed
         }
     }
@@ -35,7 +35,7 @@ class TreeMap<D: Hashable> {
         }
         
         // Loop through all items, adding their children if they're expanded
-        var checkingItems: [(parentId: D?, item: OutlineViewItem<Data>)] = rootItems.map { (nil, $0) }
+        var checkingItems: [(parentID: D?, item: OutlineViewItem<Data>)] = rootItems.map { (nil, $0) }
         while !checkingItems.isEmpty {
             let nextItem = checkingItems.popLast()!.item
             if itemIsExpanded(nextItem),
@@ -87,7 +87,7 @@ class TreeMap<D: Hashable> {
         }
         
         // create new node
-        let newNode = Node(parentId: intoItem, isLeaf: isLeaf)
+        let newNode = Node(parentID: intoItem, isLeaf: isLeaf)
         directory[item] = newNode
     }
     
@@ -106,7 +106,7 @@ class TreeMap<D: Hashable> {
         
         directory[item]?.state = .expanded(children: children.map(\.id))
         for child in children {
-            directory[child.id] = Node(parentId: item, isLeaf: child.isLeaf)
+            directory[child.id] = Node(parentID: item, isLeaf: child.isLeaf)
         }
     }
     
@@ -116,11 +116,11 @@ class TreeMap<D: Hashable> {
     /// - Parameters:
     ///   - item: The ID of the item to mark as collapsed.
     func collapseItem(_ item: D) {
-        guard case let .expanded(existingChildIds) = directory[item]?.state
+        guard case let .expanded(existingChildIDs) = directory[item]?.state
         else { return }
         directory[item]?.state = .collapsed
-        for childId in existingChildIds {
-            directory[childId] = nil
+        for childID in existingChildIDs {
+            directory[childID] = nil
         }
     }
     
@@ -129,17 +129,17 @@ class TreeMap<D: Hashable> {
     /// - Parameter item: The ID of the item to remove.
     func removeItem(_ item: D) {
         // Remove all children from tree
-        if case let .expanded(childIds) = directory[item]?.state {
-            childIds.forEach { removeItem($0) }
+        if case let .expanded(childIDs) = directory[item]?.state {
+            childIDs.forEach { removeItem($0) }
         }
         
         // remove from parent
-        if let parentId = directory[item]?.parentId,
-           case var .expanded(siblingIDs) = directory[parentId]?.state,
+        if let parentID = directory[item]?.parentID,
+           case var .expanded(siblingIDs) = directory[parentID]?.state,
            let childIdx = siblingIDs.firstIndex(of: item)
         {
             siblingIDs.remove(at: childIdx)
-            directory[parentId]?.state = .expanded(children: siblingIDs)
+            directory[parentID]?.state = .expanded(children: siblingIDs)
         }
         
         // remove from root
@@ -202,10 +202,10 @@ class TreeMap<D: Hashable> {
         guard let node = directory[item] else { return nil }
         
         var result = [item]
-        var parent = node.parentId
+        var parent = node.parentID
         while parent != nil {
             result.insert(parent!, at: 0)
-            parent = directory[parent!]?.parentId
+            parent = directory[parent!]?.parentID
         }
         return result
     }

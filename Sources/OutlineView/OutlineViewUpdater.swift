@@ -18,30 +18,30 @@ where Data.Element: Identifiable {
         newState: [OutlineViewItem<Data>]?,
         parent: OutlineViewItem<Data>?
     ) {
-        // Get states to compare: oldIds and newIds, as related to the given parent object
-        let oldIds: [Data.Element.ID]?
+        // Get states to compare: oldIDs and newIDs, as related to the given parent object
+        let oldIDs: [Data.Element.ID]?
         if let oldStateTree {
             if let parent {
-                oldIds = oldStateTree.currentChildrenOfItem(parent.id)
+                oldIDs = oldStateTree.currentChildrenOfItem(parent.id)
             } else {
-                oldIds = oldStateTree.rootData
+                oldIDs = oldStateTree.rootData
             }
         } else {
-            oldIds = nil
+            oldIDs = nil
         }
         
         let newNonOptionalState = newState ?? []
 
-        guard oldIds != nil || newState != nil else {
+        guard oldIDs != nil || newState != nil else {
             // Early exit. No state to compare.
             return
         }
 
-        let oldNonOptionalIds = oldIds ?? []
-        let newIds = newNonOptionalState.map { $0.id }
-        let diff = newIds.difference(from: oldNonOptionalIds)
+        let oldNonOptionalIDs = oldIDs ?? []
+        let newIDs = newNonOptionalState.map { $0.id }
+        let diff = newIDs.difference(from: oldNonOptionalIDs)
 
-        if !diff.isEmpty || oldIds != newIds {
+        if !diff.isEmpty || oldIDs != newIDs {
             // Parent needs to be updated as the children have changed.
             // Children are not reloaded to allow animation.
             outlineView.reloadItem(parent, reloadChildren: false)
@@ -54,7 +54,7 @@ where Data.Element: Identifiable {
         }
 
         var oldUnchangedElements = newNonOptionalState
-            .filter { oldNonOptionalIds.contains($0.id) }
+            .filter { oldNonOptionalIDs.contains($0.id) }
             .reduce(into: [:], { $0[$1.id] = $1 })
 
         for change in diff {

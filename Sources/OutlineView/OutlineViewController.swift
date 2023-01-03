@@ -99,7 +99,7 @@ extension OutlineViewController {
         outlineView.endUpdates()
         
         // After updates, dataSource must rebuild its idTree for future updates
-        dataSource.rebuildIdTree(rootItems: newState, outlineView: outlineView)
+        dataSource.rebuildIDTree(rootItems: newState, outlineView: outlineView)
     }
 
     func changeSelectedItem(to item: Data.Element?) {

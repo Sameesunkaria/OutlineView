@@ -105,29 +105,29 @@ class OutlineSampleViewModel: ObservableObject {
     }
     
     func childrenOfItem(_ item: FileItem) -> [FileItem]? {
-        getChildrenOfId(item.id)
+        getChildrenOfID(item.id)
     }
     
-    private func getItemWithId(_ identifier: FileItem.ID) -> FileItem? {
+    private func getItemWithID(_ identifier: FileItem.ID) -> FileItem? {
         dataAndChildren.first(where: { $0.item.id == identifier })?.item
     }
     
-    private func getChildrenOfId(_ identifier: FileItem.ID) -> [FileItem]? {
+    private func getChildrenOfID(_ identifier: FileItem.ID) -> [FileItem]? {
         dataAndChildren.first(where: { $0.item.id == identifier })?.children
     }
     
-    private func getParentOfId(_ identifier: FileItem.ID) -> FileItem? {
+    private func getParentOfID(_ identifier: FileItem.ID) -> FileItem? {
         dataAndChildren.first(where: { $0.children?.map(\.id).contains(identifier) ?? false })?.item
     }
     
     private func item(_ item: FileItem, isDescendentOf parent: FileItem) -> Bool {
         
-        var currentParent = getParentOfId(item.id)
+        var currentParent = getParentOfID(item.id)
         while currentParent != nil {
             if currentParent == parent {
                 return true
             } else {
-                currentParent = getParentOfId(currentParent!.id)
+                currentParent = getParentOfID(currentParent!.id)
             }
         }
         
@@ -155,8 +155,8 @@ extension OutlineSampleViewModel: DropReceiver {
         switch pasteboardType {
         case .outlineViewItem:
             let encodedData = item.data(forType: pasteboardType)
-            let decodedId = encodedData.flatMap { try? JSONDecoder().decode(String.self, from: $0) }
-            result = decodedId.flatMap { getItemWithId($0) }
+            let decodedID = encodedData.flatMap { try? JSONDecoder().decode(String.self, from: $0) }
+            result = decodedID.flatMap { getItemWithID($0) }
         case .fileURL:
             let filePath = item.string(forType: pasteboardType)
             let fileUrl = filePath.flatMap { URL(string: $0) }
@@ -208,7 +208,7 @@ extension OutlineSampleViewModel: DropReceiver {
         if target.intoElement == nil {
             // intoElement == nil means we're dragging into the root
             targetChildren = rootData
-        } else if let childrenOfObject = getChildrenOfId(target.intoElement!.id) {
+        } else if let childrenOfObject = getChildrenOfID(target.intoElement!.id) {
             // intoElement has children, so dragging into a folder
             targetChildren = childrenOfObject
         } else {

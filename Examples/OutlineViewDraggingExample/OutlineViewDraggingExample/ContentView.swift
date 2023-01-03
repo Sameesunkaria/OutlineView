@@ -51,10 +51,10 @@ struct ContentView: View {
         .rowSeparator(separatorEnabled ? .visible : .hidden)
         .rowSeparatorColor(NSColor(separatorColor))
         .dragDataSource {
-            guard let encodedId = try? JSONEncoder().encode($0.id)
+            guard let encodedID = try? JSONEncoder().encode($0.id)
             else { return nil }
             let pbItem = NSPasteboardItem()
-            pbItem.setData(encodedId, forType: .outlineViewItem)
+            pbItem.setData(encodedID, forType: .outlineViewItem)
             return pbItem
         }
         

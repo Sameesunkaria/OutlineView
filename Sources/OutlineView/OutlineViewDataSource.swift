@@ -49,7 +49,7 @@ where Drop.DataElement == Data.Element {
             .sink(receiveValue: receiveItemDidCollapseNotification)
     }
         
-    func rebuildIdTree(rootItems: [OutlineViewItem<Data>], outlineView: NSOutlineView) {
+    func rebuildIDTree(rootItems: [OutlineViewItem<Data>], outlineView: NSOutlineView) {
         treeMap = TreeMap(rootItems: rootItems, itemIsExpanded: { outlineView.isItemExpanded($0) })
     }
     
@@ -185,8 +185,8 @@ private extension OutlineViewDataSource {
         else { return }
         
         let typedObjToExpand = typedItem(objectToExpand)
-        let childIds = typedObjToExpand.children?.map { ($0.id, $0.children == nil) }
-        treeMap.expandItem(typedObjToExpand.value.id, children: childIds!)
+        let childIDs = typedObjToExpand.children?.map { ($0.id, $0.children == nil) }
+        treeMap.expandItem(typedObjToExpand.value.id, children: childIDs!)
     }
     
     func receiveItemDidCollapseNotification(outlineView: NSOutlineView, collapsedObject: Any) {

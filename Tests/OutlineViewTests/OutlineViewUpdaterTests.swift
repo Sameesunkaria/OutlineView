@@ -31,7 +31,6 @@ class OutlineViewUpdaterTests: XCTestCase {
         updater.assumeOutlineIsExpanded = true
 
         let oldStateTree = TreeMap(rootItems: oldState, itemIsExpanded: { _ in true })
-        //let oldIds = oldState.map { $0.idTree() }
         
         updater.performUpdates(
             outlineView: outlineView,
