@@ -23,6 +23,10 @@ class TreeMap<D: Hashable> {
     private (set) var rootData: [D] = []
     private var directory: [D : Node] = [:]
         
+    var allItemIds: Set<D> {
+        Set(directory.keys)
+    }
+    
     init() {}
     
     init<Data: Sequence>(
