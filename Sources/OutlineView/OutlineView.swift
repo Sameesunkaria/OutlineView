@@ -81,7 +81,6 @@ where Drop.DataElement == Data.Element {
     ///     element in `data`. An `NSTableCellView` subclass is preferred.
     ///     The `NSView` should return the correct `fittingSize`
     ///     as it is used to determine the height of the cell.
-    @available(macOS 11.0, *)
     public init(
         _ data: Data,
         children: KeyPath<Data.Element, Data?>,
@@ -133,7 +132,6 @@ where Drop.DataElement == Data.Element {
     ///     element in `data`. An `NSTableCellView` subclass is preferred.
     ///     The `NSView` should return the correct `fittingSize`
     ///     as it is used to determine the height of the cell.
-    @available(macOS 11.0, *)
     public init(
         _ data: Data,
         children: @escaping (Data.Element) -> Data?,
@@ -214,7 +212,6 @@ public extension OutlineView where Drop == NoDropReceiver<Data.Element> {
     ///     element in `data`. An `NSTableCellView` subclass is preferred.
     ///     The `NSView` should return the correct `fittingSize`
     ///     as it is used to determine the height of the cell.
-    @available(macOS 11.0, *)
     init(
         _ data: Data,
         children: KeyPath<Data.Element, Data?>,
@@ -263,7 +260,6 @@ public extension OutlineView where Drop == NoDropReceiver<Data.Element> {
     ///     element in `data`. An `NSTableCellView` subclass is preferred.
     ///     The `NSView` should return the correct `fittingSize`
     ///     as it is used to determine the height of the cell.
-    @available(macOS 11.0, *)
     init(
         _ data: Data,
         children: @escaping (Data.Element) -> Data?,
