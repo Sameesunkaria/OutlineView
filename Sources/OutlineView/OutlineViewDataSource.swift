@@ -42,11 +42,15 @@ where Drop.DataElement == Data.Element {
         willExpandToken = NotificationCenter.default.publisher(for: NSOutlineView.itemWillExpandNotification)
             .receive(on: DispatchQueue.main)
             .compactMap { NSOutlineView.expansionNotificationInfo($0) }
-            .sink(receiveValue: receiveItemWillExpandNotification)
+            .sink { [weak self] in
+                self?.receiveItemWillExpandNotification(outlineView: $0.outlineView, objectToExpand: $0.object)
+            }
         didCollapseToken = NotificationCenter.default.publisher(for: NSOutlineView.itemDidCollapseNotification)
             .receive(on: DispatchQueue.main)
             .compactMap { NSOutlineView.expansionNotificationInfo($0) }
-            .sink(receiveValue: receiveItemDidCollapseNotification)
+            .sink { [weak self] in
+                self?.receiveItemDidCollapseNotification(outlineView: $0.outlineView, collapsedObject: $0.object)
+            }
     }
         
     func rebuildIDTree(rootItems: [OutlineViewItem<Data>], outlineView: NSOutlineView) {
@@ -157,7 +161,9 @@ where Drop.DataElement == Data.Element {
                 .publisher(for: NSOutlineView.itemDidExpandNotification, object: outlineView)
                 .compactMap { NSOutlineView.expansionNotificationInfo($0) }
                 .receive(on: DispatchQueue.main)
-                .sink(receiveValue: receiveItemDidExpandNotification)
+                .sink { [weak self] in
+                    self?.receiveItemDidExpandNotification(outlineView: $0.outlineView, expandedObject: $0.object)
+                }
         }
         
         return dropIsSuccessful
