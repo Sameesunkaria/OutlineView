@@ -39,8 +39,7 @@ public func triggerReloadOfOutlineView<K: Hashable, L: Hashable>(id: K, itemIds:
     )
 }
 
-internal extension Notification {
-    
+extension Notification {
     func outlineId<K: Hashable>(as type: K.Type) -> K? {
         userInfo?["id"] as? K
     }
@@ -48,5 +47,4 @@ internal extension Notification {
     func outlineItemIds<L: Hashable>(as type: L.Type) -> [L]? {
         userInfo?["items"] as? [L]
     }
-    
 }

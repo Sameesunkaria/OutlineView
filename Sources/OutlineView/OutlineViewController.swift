@@ -64,10 +64,10 @@ where Data.Element: Identifiable {
             .default
             .publisher(for: .OutlineViewReload)
             .filter { $0.outlineId(as: ID.self) == id }
-            .sink(receiveValue: { note in
+            .sink { [weak self] note in
                 let itemIds = note.outlineItemIds(as: Data.Element.ID.self)
-                self.reloadRowData(itemIds: itemIds)
-            })
+                self?.reloadRowData(itemIds: itemIds)
+            }
     }
 
     required init?(coder: NSCoder) {
@@ -144,7 +144,6 @@ extension OutlineViewController {
     /// reload individual rows. OutlineViewController and DataSource
     /// would need to be changed in that case.
     func reloadRowData(itemIds: [Data.Element.ID]?) {
-        
         // If no itemIds are given, reload everything
         guard let itemIds,
               !itemIds.isEmpty
@@ -172,5 +171,4 @@ extension OutlineViewController {
             currentRow += 1
         }
     }
-    
 }
