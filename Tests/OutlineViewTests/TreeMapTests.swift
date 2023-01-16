@@ -10,7 +10,7 @@ final class TreeMapTests: XCTestCase {
     /// A basic TreeMap with 5 root objects (1 through 5),
     /// where all but item 5 are internal nodes, and all
     /// are collapsed.
-    static var testTree: TreeMap<Int> {
+    private var testTree: TreeMap<Int> {
         let rootItems = (1...5)
             .map { TestItem(id: $0, children: $0 == 5 ? nil : []) }
             .map { OutlineViewItem(value: $0, children: \TestItem.children) }
@@ -18,7 +18,7 @@ final class TreeMapTests: XCTestCase {
     }
     
     func testExpandItem() {
-        let tree = Self.testTree
+        let tree = testTree
 
         tree.expandItem(4, children: [
             (41, true),
@@ -30,7 +30,7 @@ final class TreeMapTests: XCTestCase {
     }
     
     func testIsItemExpandable() {
-        let tree = Self.testTree
+        let tree = testTree
 
         tree.expandItem(4, children: [
             (41, true),
@@ -48,7 +48,7 @@ final class TreeMapTests: XCTestCase {
     }
     
     func testIsItemExpanded() {
-        let tree = Self.testTree
+        let tree = testTree
 
         tree.expandItem(4, children: [
             (41, true),
@@ -63,7 +63,7 @@ final class TreeMapTests: XCTestCase {
     }
     
     func testCurrentChildrenOfItems() {
-        let tree = Self.testTree
+        let tree = testTree
 
         tree.expandItem(4, children: [
             (41, true),
@@ -74,7 +74,7 @@ final class TreeMapTests: XCTestCase {
     }
     
     func testAddItems() {
-        let tree = Self.testTree
+        let tree = testTree
 
         tree.expandItem(4, children: [
             (41, true),
@@ -89,7 +89,7 @@ final class TreeMapTests: XCTestCase {
     }
     
     func testCollapseItems() {
-        let tree = Self.testTree
+        let tree = testTree
 
         tree.expandItem(4, children: [
             (41, true),
@@ -103,7 +103,7 @@ final class TreeMapTests: XCTestCase {
     }
     
     func testRemoveItems() {
-        let tree = Self.testTree
+        let tree = testTree
         
         tree.expandItem(
             4,
@@ -122,7 +122,7 @@ final class TreeMapTests: XCTestCase {
     }
             
     func testLineageOfItem() {
-        let tree = Self.testTree
+        let tree = testTree
         
         tree.expandItem(
             4,
