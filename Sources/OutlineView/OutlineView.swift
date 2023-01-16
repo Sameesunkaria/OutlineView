@@ -45,7 +45,7 @@ where Drop.DataElement == Data.Element {
     var separatorColor: NSColor = .separatorColor
 
     var dragDataSource: DragSourceWriter<Data.Element>?
-    var dropReceiver: Drop
+    var dropReceiver: Drop? = nil
 
     // MARK: Initializers without SeparatorInsets (MacOS 10.15+)
     
@@ -74,8 +74,6 @@ where Drop.DataElement == Data.Element {
     ///     at the key path is `nil`, then the outline group treats `data` as a
     ///     leaf in the tree, like a regular file in a file system.
     ///   - selection: A binding to a selected value.
-    ///   - dropReceiver: An object conforming to `DropReceiver` that handles
-    ///     drag-and-drop receiving for the OutlineView
     ///   - content: A closure that produces an `NSView` based on an
     ///     element in `data`. An `NSTableCellView` subclass is preferred.
     ///     The `NSView` should return the correct `fittingSize`
@@ -84,13 +82,11 @@ where Drop.DataElement == Data.Element {
         _ data: Data,
         children: KeyPath<Data.Element, Data?>,
         selection: Binding<Data.Element?>,
-        dropReceiver: Drop,
         content: @escaping (Data.Element) -> NSView
     ) {
         self.data = data
         self.childSource = .keyPath(children)
         self._selection = selection
-        self.dropReceiver = dropReceiver
         self.separatorVisibility = .hidden
         self.content = content
     }
@@ -120,8 +116,6 @@ where Drop.DataElement == Data.Element {
     ///     from the closure is `nil`, then the outline group treats `data` as a
     ///     leaf in the tree, like a regular file in a file system.
     ///   - selection: A binding to a selected value.
-    ///   - dropReceiver: An object conforming to `DropReceiver` that handles
-    ///     drag-and-drop receiving for the OutlineView
     ///   - content: A closure that produces an `NSView` based on an
     ///     element in `data`. An `NSTableCellView` subclass is preferred.
     ///     The `NSView` should return the correct `fittingSize`
@@ -130,13 +124,11 @@ where Drop.DataElement == Data.Element {
         _ data: Data,
         children: @escaping (Data.Element) -> Data?,
         selection: Binding<Data.Element?>,
-        dropReceiver: Drop,
         content: @escaping (Data.Element) -> NSView
     ) {
         self.data = data
         self.childSource = .provider(children)
         self._selection = selection
-        self.dropReceiver = dropReceiver
         self.separatorVisibility = .hidden
         self.content = content
     }
@@ -168,8 +160,6 @@ where Drop.DataElement == Data.Element {
     ///     at the key path is `nil`, then the outline group treats `data` as a
     ///     leaf in the tree, like a regular file in a file system.
     ///   - selection: A binding to a selected value.
-    ///   - dropReceiver: An object conforming to `DropReceiver` that handles
-    ///     drag-and-drop receiving for the OutlineView
     ///   - separatorInsets: An optional closure that produces row separator lines
     ///     with the given insets for each item in the outline view. If this closure
     ///     is not provided (the default), separators are hidden.
@@ -182,14 +172,12 @@ where Drop.DataElement == Data.Element {
         _ data: Data,
         children: KeyPath<Data.Element, Data?>,
         selection: Binding<Data.Element?>,
-        dropReceiver: Drop,
         separatorInsets: ((Data.Element) -> NSEdgeInsets)? = nil,
         content: @escaping (Data.Element) -> NSView
     ) {
         self.data = data
         self.childSource = .keyPath(children)
         self._selection = selection
-        self.dropReceiver = dropReceiver
         self.separatorInsets = separatorInsets
         self.separatorVisibility = separatorInsets == nil ? .hidden : .visible
         self.content = content
@@ -220,8 +208,6 @@ where Drop.DataElement == Data.Element {
     ///     from the closure is `nil`, then the outline group treats `data` as a
     ///     leaf in the tree, like a regular file in a file system.
     ///   - selection: A binding to a selected value.
-    ///   - dropReceiver: An object conforming to `DropReceiver` that handles
-    ///     drag-and-drop receiving for the OutlineView
     ///   - separatorInsets: An optional closure that produces row separator lines
     ///     with the given insets for each item in the outline view. If this closure
     ///     is not provided (the default), separators are hidden.
@@ -234,14 +220,12 @@ where Drop.DataElement == Data.Element {
         _ data: Data,
         children: @escaping (Data.Element) -> Data?,
         selection: Binding<Data.Element?>,
-        dropReceiver: Drop,
         separatorInsets: ((Data.Element) -> NSEdgeInsets)? = nil,
         content: @escaping (Data.Element) -> NSView
     ) {
         self.data = data
         self.childSource = .provider(children)
         self._selection = selection
-        self.dropReceiver = dropReceiver
         self.separatorInsets = separatorInsets
         self.separatorVisibility = separatorInsets == nil ? .hidden : .visible
         self.content = content
@@ -317,7 +301,6 @@ public extension OutlineView where Drop == NoDropReceiver<Data.Element> {
         self.data = data
         self.childSource = .keyPath(children)
         self._selection = selection
-        self.dropReceiver = NoDropReceiver()
         self.separatorVisibility = .hidden
         self.content = content
     }
@@ -360,7 +343,6 @@ public extension OutlineView where Drop == NoDropReceiver<Data.Element> {
         self.data = data
         self.childSource = .provider(children)
         self._selection = selection
-        self.dropReceiver = NoDropReceiver()
         self.separatorVisibility = .hidden
         self.content = content
     }
@@ -408,7 +390,6 @@ public extension OutlineView where Drop == NoDropReceiver<Data.Element> {
         self.data = data
         self.childSource = .keyPath(children)
         self._selection = selection
-        self.dropReceiver = NoDropReceiver()
         self.separatorInsets = separatorInsets
         self.separatorVisibility = separatorInsets == nil ? .hidden : .visible
         self.content = content
@@ -457,7 +438,6 @@ public extension OutlineView where Drop == NoDropReceiver<Data.Element> {
         self.data = data
         self.childSource = .provider(children)
         self._selection = selection
-        self.dropReceiver = NoDropReceiver()
         self.separatorInsets = separatorInsets
         self.separatorVisibility = separatorInsets == nil ? .hidden : .visible
         self.content = content
@@ -495,6 +475,16 @@ public extension OutlineView {
     func rowSeparatorColor(_ color: NSColor) -> Self {
         var mutableSelf = self
         mutableSelf.separatorColor = color
+        return mutableSelf
+    }
+    
+    /// Adds a drop receiver to the OutlineView, allowing it to react to drag
+    /// and drop operations.
+    /// - Parameter receiver: An object conforming to `DropReceiver` that handles
+    ///   drag-and-drop receiving for the OutlineView
+    func onDrop(receiver: Drop) -> Self {
+        var mutableSelf = self
+        mutableSelf.dropReceiver = receiver
         return mutableSelf
     }
     

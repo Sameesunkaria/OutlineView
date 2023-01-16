@@ -35,7 +35,6 @@ struct ContentView: View {
             dataSource.rootData,
             children: dataSource.childrenOfItem,
             selection: $selection,
-            dropReceiver: dataSource,
             separatorInsets: { fileItem in
                 NSEdgeInsets(
                     top: 0,
@@ -57,6 +56,7 @@ struct ContentView: View {
             pbItem.setData(encodedID, forType: .outlineViewItem)
             return pbItem
         }
+        .onDrop(receiver: dataSource)
         
     }
 

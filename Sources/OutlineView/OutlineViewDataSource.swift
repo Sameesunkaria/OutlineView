@@ -5,7 +5,7 @@ import Combine
 class OutlineViewDataSource<Data: Sequence, Drop: DropReceiver>: NSObject, NSOutlineViewDataSource
 where Drop.DataElement == Data.Element {
     var items: [OutlineViewItem<Data>]
-    var dropReceiver: Drop
+    var dropReceiver: Drop?
     var dragWriter: DragSourceWriter<Data.Element>?
     let childrenSource: ChildSource<Data>
     
@@ -26,7 +26,7 @@ where Drop.DataElement == Data.Element {
     private var willExpandToken: AnyCancellable?
     private var didCollapseToken: AnyCancellable?
         
-    init(items: [OutlineViewItem<Data>], childSource: ChildSource<Data>, dropReceiver: Drop) {
+    init(items: [OutlineViewItem<Data>], childSource: ChildSource<Data>, dropReceiver: Drop?) {
         self.items = items
         self.childrenSource = childSource
         self.dropReceiver = dropReceiver
@@ -113,10 +113,9 @@ where Drop.DataElement == Data.Element {
         proposedItem item: Any?,
         proposedChildIndex index: Int
     ) -> NSDragOperation {
-        guard let dropTarget = dropTargetData(in: outlineView, dragInfo: info, item: item, childIndex: index)
+        guard let dropTarget = dropTargetData(in: outlineView, dragInfo: info, item: item, childIndex: index),
+              let validationResult = dropReceiver?.validateDrop(target: dropTarget)
         else { return [] }
-        
-        let validationResult = dropReceiver.validateDrop(target: dropTarget)
 
         switch validationResult {
         case .copy:
@@ -142,11 +141,10 @@ where Drop.DataElement == Data.Element {
         item: Any?,
         childIndex index: Int
     ) -> Bool {
-        guard let dropTarget = dropTargetData(in: outlineView, dragInfo: info, item: item, childIndex: index)
+        guard let dropTarget = dropTargetData(in: outlineView, dragInfo: info, item: item, childIndex: index),
+              // Perform `acceptDrop(target:)` to get result of drop
+              let dropIsSuccessful = dropReceiver?.acceptDrop(target: dropTarget)
         else { return false }
-        
-        // Perform `acceptDrop(target:)` to get result of drop
-        let dropIsSuccessful = dropReceiver.acceptDrop(target: dropTarget)
         
         // If drop was successful, but onto an unexpanded item, a quirk of NSOutlineView
         // will cause the item to expand with the newly dropped item already in it, which
@@ -211,7 +209,8 @@ private extension OutlineViewDataSource {
         childIndex: Int
     ) -> DropTarget<Data.Element>? {
         guard let pasteboardItems = dragInfo.draggingPasteboard.pasteboardItems,
-              !pasteboardItems.isEmpty
+              !pasteboardItems.isEmpty,
+              let dropReceiver
         else { return nil }
         
         let decodedItems = pasteboardItems.compactMap {
@@ -228,18 +227,5 @@ private extension OutlineViewDataSource {
             }
         )
         return dropTarget
-    }
-}
-
-// MARK: - Extra Initializers
-
-@available(macOS 10.15, *)
-extension OutlineViewDataSource where Drop == NoDropReceiver<Data.Element> {
-    convenience init(items: [OutlineViewItem<Data>], childSource: ChildSource<Data>) {
-        self.init(
-            items: items,
-            childSource: childSource,
-            dropReceiver: NoDropReceiver()
-        )
     }
 }

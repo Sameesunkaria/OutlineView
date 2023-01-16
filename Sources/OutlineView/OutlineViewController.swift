@@ -11,14 +11,14 @@ where Drop.DataElement == Data.Element {
     let updater = OutlineViewUpdater<Data>()
 
     let childrenSource: ChildSource<Data>
-    let dropReceiver: Drop
+    let dropReceiver: Drop?
 
     init(
         data: Data,
         childrenSource: ChildSource<Data>,
         content: @escaping (Data.Element) -> NSView,
         selectionChanged: @escaping (Data.Element?) -> Void,
-        dropReceiver: Drop,
+        dropReceiver: Drop?,
         separatorInsets: ((Data.Element) -> NSEdgeInsets)?
     ) {
         scrollView.documentView = outlineView
@@ -50,7 +50,9 @@ where Drop.DataElement == Data.Element {
         self.childrenSource = childrenSource
         
         self.dropReceiver = dropReceiver
-        outlineView.registerForDraggedTypes(dropReceiver.acceptedTypes)
+        if let dropTypes = dropReceiver?.acceptedTypes {
+            outlineView.registerForDraggedTypes(dropTypes)
+        }
 
         super.init(nibName: nil, bundle: nil)
 

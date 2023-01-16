@@ -44,21 +44,21 @@ public protocol DropReceiver {
 }
 
 @available(macOS 10.15, *)
-public struct NoDropReceiver<Element: Identifiable>: DropReceiver {
+public enum NoDropReceiver<Element: Identifiable>: DropReceiver {
     public typealias DataElement = Element
     
-    public var acceptedTypes: [NSPasteboard.PasteboardType] { [] }
+    public var acceptedTypes: [NSPasteboard.PasteboardType] { fatalError() }
     
     public func readPasteboard(item: NSPasteboardItem) -> DraggedItem<Element>? {
-        nil
+        fatalError()
     }
     
     public func validateDrop(target: DropTarget<Element>) -> ValidationResult<Element> {
-        .deny
+        fatalError()
     }
     
     public func acceptDrop(target: DropTarget<Element>) -> Bool {
-        false
+        fatalError()
     }
 }
 
