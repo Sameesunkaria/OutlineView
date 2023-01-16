@@ -65,7 +65,7 @@ class TreeMap<D: Hashable> {
     func addItem(_ item: D, isLeaf: Bool, intoItem: D?, atIndex: Int?) {
         // Add to parent or root
         if let intoItem,
-           let fullIntoItem = directory[intoItem],
+           var fullIntoItem = directory[intoItem],
            case var .expanded(intoChildren) = fullIntoItem.state
         {
             // Add to children of selected item
@@ -77,7 +77,8 @@ class TreeMap<D: Hashable> {
                 intoChildren.append(item)
             }
             
-            directory[intoItem]!.state = .expanded(children: intoChildren)
+            fullIntoItem.state = .expanded(children: intoChildren)
+            directory[intoItem] = fullIntoItem
         } else {
             // Add to root data
             if let atIndex {
