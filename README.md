@@ -4,7 +4,7 @@
 It provides a convenient wrapper around AppKit's `NSOutlineView`, similar to SwiftUI's `OutlineGroup` embedded in a `List` or a `List` with children. `OutlineView` provides it's own scroll view and doesn't have to be embedded in a `List`.
 
 <p align="center">
-  <img width="606" alt="Screenshot" src="Example/Screenshot.png">
+  <img width="606" alt="Screenshot" src="Examples/Screenshot.png">
 </p>
 
 ## Installation
@@ -67,6 +67,23 @@ OutlineView(data, children: \.children, selection: $selection) { item in
 
 ### Customization
 
+#### Children
+There are two types of `.children` parameters in the `OutlineView` initializers. You can either provide children for data items using a KeyPath pointing to an optional array of the same type, or a closure that provides an optional array based on the `ID` of the item.
+
+```swift
+// KeyPath option:
+OutlineView(data, children: \.children, selection: $selection) { item in
+  NSTextField(string: item.description)
+}
+
+// Closure option:
+OutlineView(data, children: { item in 
+  dataSource.childrenOfItem(item) 
+}) { item in
+  NSTextField(string: item.description)
+}
+```
+
 #### Style
 You can customize the look of the `OutlineView` by providing a preferred style (`NSOutlineView.Style`) in the `outlineViewStyle` method. The default value is `.automatic`.
 
@@ -126,6 +143,82 @@ OutlineView(data, children: \.children, selection: $selection) { item in
 .rowSeparator(.visible)
 .rowSeparatorColor(.red)
 ```
+
+### Drag & Drop
+
+#### Dragging From `OutlineView`
+
+Add the `dragDataSource` modifier to the `OutlineView` to allow dragging rows from the `OutlineView`. The `dragDataSource` takes a closure that translates a data element into an optional `NSPasteboardItem` (with a nil value meaning the row can't be dragged).
+
+```swift
+extension NSPasteboard.PasteboardType {
+  static var myPasteboardType: Self {
+    PasteboardType("MySpecialPasteboardIdentifier")
+  }
+}
+
+theOutlineView
+  .dragDataSource { item in
+    let pbItem = NSPasteboardItem()
+    pbItem.setData(item.dataRepresentation, forType: .myPasteboardType)
+    return pbItem
+  }
+```
+
+#### Dropping into `OutlineView`
+
+Handling drag events that come into the `OutlineView`, either from `dragDataSource` modifier or from outside the `OutlineView`, can be handled by adding the modifier `onDrop(of:receiver:)` This modifier gives the `OutlineView` a list of `NSPasteboard.PasteboardType` that can be read, and supplies a delegate object, conforming to the `DropReceiver` protocol. `DropReceiver` implements functions to validate a drop operation, read items from the dragging pasteboard, and update the data source when a drop is successful.
+
+```swift
+theOutlineView
+  .onDrop(of: [.myPasteboardType, .fileUrl], receiver: MyDropReceiver())
+  
+class MyDropReceiver: DropReceiver {
+  func readPasteboard(item: NSPasteboardItem) -> DraggedItem<DataElement>? {
+    guard let pasteboardType = item.availableType(from: pasteboardTypes) else { return nil }
+    
+    switch pasteboardType {
+      case .myPasteboardType:
+        if let draggedData = item.data(forType: .myPasteboardType) {
+          let draggedFileItem = /* instance of OutlineView.Data.Element from draggedData */
+          return (draggedFileItem, .myPasteboardType)
+        } else {
+          return nil
+        }
+      case .fileUrl:
+        if let draggedUrlString = item.string(forType: .fileUrl),
+           draggedUrl = URL(string: draggedUrlString)
+        {
+          let newFileItem = /* instance of OutlineView.Data.Element from draggedUrl */
+          return (newFileItem, .fileUrl)
+        } else {
+          return nil
+        }
+      default:
+        return nil
+    }
+  }
+  
+  func validateDrop(target: DropTarget<DataElement>) -> ValidationResult<DataElement> {
+    let draggedItems = target.draggedItems
+    
+    if draggedItems[0].type == .myPasteboardType {
+      return .move
+    } else if draggedItems[0].type == .fileUrl {
+      return .copy
+    } else {
+      return .deny
+    }
+  }
+  
+  func acceptDrop(target: DropTarget<DataElement>) -> Bool {
+    // update data source to reflect that drop was successful or not
+    return dropWasSuccessful
+  }
+}
+```
+
+For more details on the various types needed in `onDrop`, see `OutlineViewDragAndDrop.swift`, and the sample app `OutlineViewDraggingExample`.
 
 ## Why use `OutlineView` instead of the native `List` with children?
 
