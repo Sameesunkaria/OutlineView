@@ -7,9 +7,6 @@ import AppKit
 public protocol DropReceiver {
     associatedtype DataElement: Identifiable
     
-    /// An array of `PasteboardType`s that the `DropReceiver` is able to read
-    var acceptedTypes: [NSPasteboard.PasteboardType] { get }
-    
     /// Given a dragged `NSPasteboardItem`, attempts to read the data in the item
     /// into a usable object for the `OutlineView`'s data source.
     ///
@@ -46,8 +43,6 @@ public protocol DropReceiver {
 @available(macOS 10.15, *)
 public enum NoDropReceiver<Element: Identifiable>: DropReceiver {
     public typealias DataElement = Element
-    
-    public var acceptedTypes: [NSPasteboard.PasteboardType] { fatalError() }
     
     public func readPasteboard(item: NSPasteboardItem) -> DraggedItem<Element>? {
         fatalError()

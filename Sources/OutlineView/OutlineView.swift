@@ -46,6 +46,7 @@ where Drop.DataElement == Data.Element {
 
     var dragDataSource: DragSourceWriter<Data.Element>?
     var dropReceiver: Drop? = nil
+    var acceptedDropTypes: [NSPasteboard.PasteboardType]? = nil
 
     // MARK: NSViewControllerRepresentable
     
@@ -55,7 +56,6 @@ where Drop.DataElement == Data.Element {
             childrenSource: childSource,
             content: content,
             selectionChanged: { selection = $0 },
-            dropReceiver: dropReceiver,
             separatorInsets: separatorInsets)
         controller.setIndentation(to: indentation)
         if #available(macOS 11.0, *) {
@@ -73,6 +73,8 @@ where Drop.DataElement == Data.Element {
         outlineController.setRowSeparator(visibility: separatorVisibility)
         outlineController.setRowSeparator(color: separatorColor)
         outlineController.setDragSourceWriter(dragDataSource)
+        outlineController.setDropReceiver(dropReceiver)
+        outlineController.setAcceptedDragTypes(acceptedDropTypes)
     }
 }
 
@@ -109,14 +111,17 @@ public extension OutlineView {
         mutableSelf.separatorColor = color
         return mutableSelf
     }
-    
+
     /// Adds a drop receiver to the OutlineView, allowing it to react to drag
     /// and drop operations.
-    /// - Parameter receiver: An object conforming to `DropReceiver` that handles
+    /// - Parameters
+    ///   - receiver: An object conforming to `DropReceiver` that handles
+    ///   - acceptedTypes: An array of `PasteboardType`s that the `DropReceiver` is able to read
     ///   drag-and-drop receiving for the OutlineView
-    func onDrop(receiver: Drop) -> Self {
+    func onDrop(of acceptedTypes: [NSPasteboard.PasteboardType], receiver: Drop) -> Self {
         var mutableSelf = self
         mutableSelf.dropReceiver = receiver
+        mutableSelf.acceptedDropTypes = acceptedTypes
         return mutableSelf
     }
     

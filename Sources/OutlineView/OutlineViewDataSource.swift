@@ -26,10 +26,9 @@ where Drop.DataElement == Data.Element {
     private var willExpandToken: AnyCancellable?
     private var didCollapseToken: AnyCancellable?
         
-    init(items: [OutlineViewItem<Data>], childSource: ChildSource<Data>, dropReceiver: Drop?) {
+    init(items: [OutlineViewItem<Data>], childSource: ChildSource<Data>) {
         self.items = items
         self.childrenSource = childSource
-        self.dropReceiver = dropReceiver
         
         treeMap = TreeMap()
         for item in items {

@@ -99,6 +99,15 @@ class OutlineSampleViewModel: ObservableObject {
     @Published var rootData: [FileItem]
     private var dataAndChildren: [(item: FileItem, children: [FileItem]?)]
     
+    var pasteboardTypes: [NSPasteboard.PasteboardType] {
+        [
+            .outlineViewItem,
+            .fileURL,
+            .fileContents,
+            .string
+        ]
+    }
+    
     init(rootData: [FileItem], childrenDirectory: [(FileItem, [FileItem]?)]) {
         self.dataAndChildren = childrenDirectory
         self.rootData = rootData
@@ -137,18 +146,8 @@ class OutlineSampleViewModel: ObservableObject {
 }
 
 extension OutlineSampleViewModel: DropReceiver {
-    
-    var acceptedTypes: [NSPasteboard.PasteboardType] {
-        [
-            .outlineViewItem,
-            .fileURL,
-            .fileContents,
-            .string
-        ]
-    }
-    
     func readPasteboard(item: NSPasteboardItem) -> DraggedItem<FileItem>? {
-        guard let pasteboardType = item.availableType(from: acceptedTypes)
+        guard let pasteboardType = item.availableType(from: pasteboardTypes)
         else { return nil }
         
         var result: FileItem? = nil
@@ -314,5 +313,4 @@ extension OutlineSampleViewModel: DropReceiver {
         objectWillChange.send()
         return true
     }
-    
 }

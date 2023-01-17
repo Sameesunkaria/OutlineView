@@ -56,8 +56,7 @@ struct ContentView: View {
             pbItem.setData(encodedID, forType: .outlineViewItem)
             return pbItem
         }
-        .onDrop(receiver: dataSource)
-        
+        .onDrop(of: dataSource.pasteboardTypes, receiver: dataSource)
     }
 
     var configBar: some View {

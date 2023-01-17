@@ -11,14 +11,13 @@ where Drop.DataElement == Data.Element {
     let updater = OutlineViewUpdater<Data>()
 
     let childrenSource: ChildSource<Data>
-    let dropReceiver: Drop?
+    //var dropReceiver: Drop? = nil
 
     init(
         data: Data,
         childrenSource: ChildSource<Data>,
         content: @escaping (Data.Element) -> NSView,
         selectionChanged: @escaping (Data.Element?) -> Void,
-        dropReceiver: Drop?,
         separatorInsets: ((Data.Element) -> NSEdgeInsets)?
     ) {
         scrollView.documentView = outlineView
@@ -37,8 +36,7 @@ where Drop.DataElement == Data.Element {
 
         dataSource = OutlineViewDataSource(
             items: data.map { OutlineViewItem(value: $0, children: childrenSource) },
-            childSource: childrenSource,
-            dropReceiver: dropReceiver
+            childSource: childrenSource
         )
         delegate = OutlineViewDelegate(
             content: content,
@@ -49,11 +47,6 @@ where Drop.DataElement == Data.Element {
 
         self.childrenSource = childrenSource
         
-        self.dropReceiver = dropReceiver
-        if let dropTypes = dropReceiver?.acceptedTypes {
-            outlineView.registerForDraggedTypes(dropTypes)
-        }
-
         super.init(nibName: nil, bundle: nil)
 
         view.addSubview(scrollView)
@@ -139,5 +132,18 @@ extension OutlineViewController {
         
     func setDragSourceWriter(_ writer: DragSourceWriter<Data.Element>?) {
         dataSource.dragWriter = writer
+    }
+    
+    func setDropReceiver(_ receiver: Drop?) {
+        dataSource.dropReceiver = receiver
+    }
+    
+    func setAcceptedDragTypes(_ acceptedTypes: [NSPasteboard.PasteboardType]?) {
+        outlineView.unregisterDraggedTypes()
+        if let acceptedTypes,
+           !acceptedTypes.isEmpty
+        {
+            outlineView.registerForDraggedTypes(acceptedTypes)
+        }
     }
 }
