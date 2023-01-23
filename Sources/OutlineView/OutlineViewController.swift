@@ -11,7 +11,6 @@ where Drop.DataElement == Data.Element {
     let updater = OutlineViewUpdater<Data>()
 
     let childrenSource: ChildSource<Data>
-    //var dropReceiver: Drop? = nil
 
     init(
         data: Data,

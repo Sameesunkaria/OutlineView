@@ -60,7 +60,7 @@ let data = [
 
 @State var selection: FileItem?
 
-OutlineView(data, children: \.children, selection: $selection) { item in
+OutlineView(data, selection: $selection, children: \.children) { item in
   NSTextField(string: item.description)
 }
 ```
@@ -68,18 +68,20 @@ OutlineView(data, children: \.children, selection: $selection) { item in
 ### Customization
 
 #### Children
-There are two types of `.children` parameters in the `OutlineView` initializers. You can either provide children for data items using a KeyPath pointing to an optional array of the same type, or a closure that provides an optional array based on the `ID` of the item.
+There are two types of `.children` parameters in the `OutlineView` initializers. You either provide the children for an item using:
+- A `KeyPath` pointing to an optional `Sequence` of the same type as the root data.
+- A closure that returns an optional `Sequence` of the same type as the root data, based on the parent item.
 
 ```swift
-// KeyPath option:
-OutlineView(data, children: \.children, selection: $selection) { item in
+// By passing a KeyPath to the children:
+OutlineView(data, selection: $selection, children: \.children) { item in
   NSTextField(string: item.description)
 }
 
-// Closure option:
-OutlineView(data, children: { item in 
+// By providing a closure that returns the children:
+OutlineView(data, selection: $selection) { item in 
   dataSource.childrenOfItem(item) 
-}) { item in
+} content: { item in
   NSTextField(string: item.description)
 }
 ```
@@ -88,7 +90,7 @@ OutlineView(data, children: { item in
 You can customize the look of the `OutlineView` by providing a preferred style (`NSOutlineView.Style`) in the `outlineViewStyle` method. The default value is `.automatic`.
 
 ```swift
-OutlineView(data, children: \.children, selection: $selection) { item in
+OutlineView(data, selection: $selection, children: \.children) { item in
   NSTextField(string: item.description)
 }
 .outlineViewStyle(.sourceList)
@@ -99,7 +101,7 @@ OutlineView(data, children: \.children, selection: $selection) { item in
 You can customize the indentation width for the `OutlineView`. Each child will be indented by this width, from the parent's leading inset. The default value is `13.0`.
 
 ```swift
-OutlineView(data, children: \.children, selection: $selection) { item in
+OutlineView(data, selection: $selection, children: \.children) { item in
   NSTextField(string: item.description)
 }
 .outlineViewIndentation(20)
@@ -110,7 +112,7 @@ OutlineView(data, children: \.children, selection: $selection) { item in
 You can customize the `OutlineView` to display row separators by using the `rowSeparator` modifier.
 
 ```swift
-OutlineView(data, children: \.children, selection: $selection) { item in
+OutlineView(data, selection: $selection, children: \.children) { item in
   NSTextField(string: item.description)
 }
 .rowSeparator(.visible)
@@ -125,8 +127,8 @@ let separatorInset = NSEdgeInsets(top: 0, left: 24, bottom: 0, right: 0)
 
 OutlineView(
   data, 
+  selection: $selection,
   children: \.children, 
-  selection: $selection
   separatorInsets: { item in separatorInset }) { item in
   NSTextField(string: item.description)
 }
@@ -137,7 +139,7 @@ OutlineView(
 You can customize the color of the row separators of the `OutlineView`. The default color is `NSColor.separatorColor`.
 
 ```swift
-OutlineView(data, children: \.children, selection: $selection) { item in
+OutlineView(data, selection: $selection, children: \.children) { item in
   NSTextField(string: item.description)
 }
 .rowSeparator(.visible)
@@ -148,7 +150,7 @@ OutlineView(data, children: \.children, selection: $selection) { item in
 
 #### Dragging From `OutlineView`
 
-Add the `dragDataSource` modifier to the `OutlineView` to allow dragging rows from the `OutlineView`. The `dragDataSource` takes a closure that translates a data element into an optional `NSPasteboardItem` (with a nil value meaning the row can't be dragged).
+Add the `dragDataSource` modifier to the `OutlineView` to allow dragging rows from the `OutlineView`. The `dragDataSource` takes a closure that translates a data element into an optional `NSPasteboardItem`, with a `nil` value meaning the row can't be dragged).
 
 ```swift
 extension NSPasteboard.PasteboardType {
@@ -157,20 +159,20 @@ extension NSPasteboard.PasteboardType {
   }
 }
 
-theOutlineView
+outlineView
   .dragDataSource { item in
-    let pbItem = NSPasteboardItem()
-    pbItem.setData(item.dataRepresentation, forType: .myPasteboardType)
-    return pbItem
+    let pasteboardItem = NSPasteboardItem()
+        pasteboardItem.setData(item.dataRepresentation, forType: .myPasteboardType)
+    return pasteboardItem
   }
 ```
 
 #### Dropping into `OutlineView`
 
-Handling drag events that come into the `OutlineView`, either from `dragDataSource` modifier or from outside the `OutlineView`, can be handled by adding the modifier `onDrop(of:receiver:)` This modifier gives the `OutlineView` a list of `NSPasteboard.PasteboardType` that can be read, and supplies a delegate object, conforming to the `DropReceiver` protocol. `DropReceiver` implements functions to validate a drop operation, read items from the dragging pasteboard, and update the data source when a drop is successful.
+Drag events on the `OutlineView`, either from the `dragDataSource` modifier or from outside the `OutlineView`, can be handled by adding the `onDrop(of:receiver:)` modifier. This modifier takes  a list of supported `NSPasteboard.PasteboardType`s and a receiver instance conforming to the `DropReceiver` protocol. `DropReceiver` implements functions to validate a drop operation, read items from the dragging pasteboard, and update the data source when a drop is successful.
 
 ```swift
-theOutlineView
+outlineView
   .onDrop(of: [.myPasteboardType, .fileUrl], receiver: MyDropReceiver())
   
 class MyDropReceiver: DropReceiver {

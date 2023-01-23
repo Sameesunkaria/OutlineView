@@ -1,40 +1,39 @@
 import Foundation
 import AppKit
 
-/// A protocol for use with `OutlineView`, implemented by an object (most likely
-/// the data source) to handle receiving items that are dragged into the `OutlineView`.
+/// A protocol for use with `OutlineView`, implemented by a delegate to interact
+/// with drop operations in an `OutlineView`.
 @available(macOS 10.15, *)
 public protocol DropReceiver {
     associatedtype DataElement: Identifiable
     
-    /// Given a dragged `NSPasteboardItem`, attempts to read the data in the item
-    /// into a usable object for the `OutlineView`'s data source.
+    /// Converts a `NSPasteboardItem` received by a drag-and-drop operation to the data
+    /// element of an `OutlineView`.
     ///
-    /// - Parameter item: The Pasteboard item that is being dragged into the OutlineView
+    /// - Parameter item: The pasteboard item that is being dragged into the OutlineView
     ///
-    /// - Returns: nil if the Pasteboard item is not readable by this receiver, or
+    /// - Returns: `nil` if the pasteboard item is not readable by this receiver, or
     ///   a tuple with the decoded item and its associated PasteboardType, which must
-    ///   be included in `acceptedTypes`
+    ///   be included in `acceptedTypes`.
     func readPasteboard(item: NSPasteboardItem) -> DraggedItem<DataElement>?
     
-    /// Called continuously as a dragged item is moved over the `OutlineView`, this is
-    /// used to define the behavior of the `OutlineView` and the drag cursor.
+    /// Defines the behavior of the `OutlineView` and the drag cursor when an item is
+    /// being dragged. Called continuously as a dragged item is moved over the `OutlineView`.
     ///
-    /// - Parameter target: A `DropTarget` object describing where the dragged item
-    ///   is being dragged over.
+    /// - Parameter target: A `DropTarget` describing where the dragged item
+    ///   is currently positioned.
     ///
     /// - Returns: A case of `ValidationResult`, which will either highlight the area
     ///   of the `OutlineView` where the item will be dropped, or some other behavior.
     ///   See `ValidationResult` for possible return values.
     func validateDrop(target: DropTarget<DataElement>) -> ValidationResult<DataElement>
     
-    /// Called once the mouse is released during a drag into the `OutlineView`, after
-    /// `validateDrop(target:)` has returned a case other than `deny`, this function should
-    /// handle updating the data source
+    /// Handles updating the data source once an item is dropped into the `OutlineView`.
+    /// Called once after the drop completes and `validateDrop(target:)` returns a case
+    /// other than `deny`.
     ///
-    /// - Parameter target: A `DropTarget` item with all the information about
-    ///   where in the `OutlineView` heirarchy the new item will be dropped, and what
-    ///   the item(s) to be dropped is.
+    /// - Parameter target: A `DropTarget` with instances of the dropped items and
+    ///   information about their position.
     ///
     /// - Returns: a boolean indicating that the drop was successful.
     func acceptDrop(target: DropTarget<DataElement>) -> Bool
@@ -60,7 +59,7 @@ public enum NoDropReceiver<Element: Identifiable>: DropReceiver {
 public typealias DragSourceWriter<D> = (D) -> NSPasteboardItem?
 public typealias DraggedItem<D> = (item: D, type: NSPasteboard.PasteboardType)
 
-/// An object describing what items are being dragged into an `OutlineView`, and
+/// An struct describing what items are being dragged into an `OutlineView`, and
 /// where in the data heirarchy they are being dropped.
 @available(macOS 10.15, *)
 public struct DropTarget<D> {
@@ -72,7 +71,7 @@ public struct DropTarget<D> {
     /// The `OutlineView` data element into which the target is dropping
     /// items.
     ///
-    /// If nil, the items are intended to drop into the root of
+    /// If `nil`, the items are intended to be dropped into the root of
     /// the data heirarchy. Otherwise, they are to be dropped into the given
     /// item's children array.
     public var intoElement: D?
@@ -80,10 +79,10 @@ public struct DropTarget<D> {
     /// The index of the children array that the dragged items are to be
     /// dropped.
     ///
-    /// If this is nil, assume that the items will be dropped into
-    /// a default location for items dropped into `intoElement` (at the end
-    /// of the array, or into a default sorting order). Otherwise, the
-    /// items should be inserted at the given index of the children array.
+    /// If `nil`, assume that the items will be dropped at the default
+    /// location for the children of `intoElement` (i.e. at the end,
+    /// or into a default sorting order). Otherwise, the items should be
+    /// inserted at the given index within the children.
     public var childIndex: Int?
     
     /// A closure that can be called to determine if the `OutlineView`'s
