@@ -112,7 +112,7 @@ public enum ValidationResult<D> {
     /// Indicates that the dragged item will be copied to a different
     /// location than it is currently hovering over. The cursor will
     /// show a "+" icon, and the highlighted location will be determined
-    /// by the bound values in this enum.
+    /// by `item` and `childIndex`.
     ///
     /// - Parameters:
     ///   - item: The item that the dragged item will be added into as a child.
