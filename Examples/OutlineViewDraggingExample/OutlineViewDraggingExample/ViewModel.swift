@@ -236,7 +236,12 @@ extension OutlineSampleViewModel: DropReceiver {
         if target.intoElement == nil,
            target.childIndex == nil
         {
-            return .moveRedirect(item: nil, childIndex: rootData.count)
+            // Move if coming from within OutlineView, copy otherwise.
+            if singleDraggedItem.type == .outlineViewItem {
+                return .moveRedirect(item: nil, childIndex: rootData.count)
+            } else {
+                return .copyRedirect(item: nil, childIndex: rootData.count)
+            }
         }
         
         // If moving into an unexpanded target folder but has a given child index,
@@ -245,11 +250,20 @@ extension OutlineSampleViewModel: DropReceiver {
            !target.isItemExpanded(target.intoElement!),
            target.childIndex != nil
         {
-            return .moveRedirect(item: target.intoElement, childIndex: nil)
+            // Move if coming from within OutlineView, copy otherwise.
+            if singleDraggedItem.type == .outlineViewItem {
+                return .moveRedirect(item: target.intoElement, childIndex: nil)
+            } else {
+                return .copyRedirect(item: target.intoElement, childIndex: nil)
+            }
         }
 
-        // All tests have passed, so validate the move as is.
-        return .move
+        // All tests have passed, so validate the move or copy as is.
+        if singleDraggedItem.type == .outlineViewItem {
+            return .move
+        } else {
+            return .copy
+        }
     }
     
     func acceptDrop(target: DropTarget<FileItem>) -> Bool {
