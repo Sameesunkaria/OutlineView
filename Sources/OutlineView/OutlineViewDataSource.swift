@@ -11,18 +11,6 @@ where Drop.DataElement == Data.Element {
     
     var treeMap: TreeMap<Data.Element.ID>
     
-    private var dropExpansionNotificationToken: AnyCancellable? {
-        didSet {
-            // In case the original notification listener doesn't stop itself
-            // as set up in `acceptDrop...`, add this as a backup to end the
-            // notification listener after a short period.
-            if dropExpansionNotificationToken != nil {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    self.dropExpansionNotificationToken = nil
-                }
-            }
-        }
-    }
     private var willExpandToken: AnyCancellable?
     private var didCollapseToken: AnyCancellable?
         
@@ -39,13 +27,11 @@ where Drop.DataElement == Data.Element {
         
         // Listen for expand/collapse notifications in order to keep TreeMap up to date
         willExpandToken = NotificationCenter.default.publisher(for: NSOutlineView.itemWillExpandNotification)
-            .receive(on: DispatchQueue.main)
             .compactMap { NSOutlineView.expansionNotificationInfo($0) }
             .sink { [weak self] in
                 self?.receiveItemWillExpandNotification(outlineView: $0.outlineView, objectToExpand: $0.object)
             }
         didCollapseToken = NotificationCenter.default.publisher(for: NSOutlineView.itemDidCollapseNotification)
-            .receive(on: DispatchQueue.main)
             .compactMap { NSOutlineView.expansionNotificationInfo($0) }
             .sink { [weak self] in
                 self?.receiveItemDidCollapseNotification(outlineView: $0.outlineView, collapsedObject: $0.object)
@@ -145,24 +131,6 @@ where Drop.DataElement == Data.Element {
               let dropIsSuccessful = dropReceiver?.acceptDrop(target: dropTarget)
         else { return false }
         
-        // If drop was successful, but onto an unexpanded item, a quirk of NSOutlineView
-        // will cause the item to expand with the newly dropped item already in it, which
-        // messes up OutlineViewUpdater's attempt to update the contents of the item (by adding
-        // the dragged items onto items already displayed in the parent item).
-        // To fix this, we briefly listen for itemDidExpandNotification, and reload the item just
-        // after it expands, then cancel our listener.
-        if dropIsSuccessful,
-           !outlineView.isItemExpanded(item)
-        {
-            dropExpansionNotificationToken = NotificationCenter.default
-                .publisher(for: NSOutlineView.itemDidExpandNotification, object: outlineView)
-                .compactMap { NSOutlineView.expansionNotificationInfo($0) }
-                .receive(on: DispatchQueue.main)
-                .sink { [weak self] in
-                    self?.receiveItemDidExpandNotification(outlineView: $0.outlineView, expandedObject: $0.object)
-                }
-        }
-        
         return dropIsSuccessful
     }
 }
@@ -171,17 +139,6 @@ where Drop.DataElement == Data.Element {
 
 @available(macOS 10.15, *)
 private extension OutlineViewDataSource {
-    func receiveItemDidExpandNotification(outlineView: NSOutlineView, expandedObject: Any) {
-        // Notification only needs to be received once, so release the observer
-        dropExpansionNotificationToken = nil
-        
-        // Reload the item and its children in order to make sure the newly-expanded
-        // item displays the correct children after update.
-        DispatchQueue.main.async {
-            outlineView.reloadItem(expandedObject, reloadChildren: true)
-        }
-    }
-
     func receiveItemWillExpandNotification(outlineView: NSOutlineView, objectToExpand: Any) {
         guard let outlineDataSource = outlineView.dataSource,
               outlineDataSource.isEqual(self)
