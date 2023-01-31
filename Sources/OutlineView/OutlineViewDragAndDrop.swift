@@ -1,4 +1,3 @@
-import Foundation
 import AppKit
 
 /// A protocol for use with `OutlineView`, implemented by a delegate to interact
@@ -72,7 +71,7 @@ public struct DropTarget<D> {
     /// items.
     ///
     /// If `nil`, the items are intended to be dropped into the root of
-    /// the data heirarchy. Otherwise, they are to be dropped into the given
+    /// the data hierarchy. Otherwise, they are to be dropped into the given
     /// item's children array.
     public var intoElement: D?
     

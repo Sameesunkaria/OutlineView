@@ -188,8 +188,9 @@ private extension OutlineViewDataSource {
         else { return }
         
         let typedObjToExpand = typedItem(objectToExpand)
-        let childIDs = typedObjToExpand.children?.map { ($0.id, $0.children == nil) }
-        treeMap.expandItem(typedObjToExpand.value.id, children: childIDs!)
+        if let childIDs = typedObjToExpand.children?.map({ ($0.id, $0.children == nil) }) {
+            treeMap.expandItem(typedObjToExpand.value.id, children: childIDs)
+        }
     }
     
     func receiveItemDidCollapseNotification(outlineView: NSOutlineView, collapsedObject: Any) {

@@ -17,13 +17,15 @@ class OutlineViewDataSourceTests: XCTestCase {
 
     let outlineView = NSOutlineView()
 
+    typealias DataSource = OutlineViewDataSource<[TestItem], NoDropReceiver<TestItem>>
+    
     func testInit() {
-        let dataSource = OutlineViewDataSource(items: items, childSource: .keyPath(\.children))
+        let dataSource = DataSource(items: items, childSource: .keyPath(\.children))
         XCTAssertEqual(dataSource.items, items)
     }
 
     func testNumberOfChildrenOfItem() {
-        let dataSource = OutlineViewDataSource(items: items, childSource: itemChildren)
+        let dataSource = DataSource(items: items, childSource: itemChildren)
 
         XCTAssertEqual(dataSource.outlineView(outlineView, numberOfChildrenOfItem: items[0]), 0)
         XCTAssertEqual(dataSource.outlineView(outlineView, numberOfChildrenOfItem: items[1]), 0)
@@ -32,7 +34,7 @@ class OutlineViewDataSourceTests: XCTestCase {
     }
 
     func testItemIsExpandable() {
-        let dataSource = OutlineViewDataSource(items: items, childSource: itemChildren)
+        let dataSource = DataSource(items: items, childSource: itemChildren)
 
         XCTAssertEqual(dataSource.outlineView(outlineView, isItemExpandable: items[0]), true)
         XCTAssertEqual(dataSource.outlineView(outlineView, isItemExpandable: items[1]), false)
@@ -41,7 +43,7 @@ class OutlineViewDataSourceTests: XCTestCase {
     }
 
     func testChildOfItem() throws {
-        let dataSource = OutlineViewDataSource(items: items, childSource: itemChildren)
+        let dataSource = DataSource(items: items, childSource: itemChildren)
 
         XCTAssertEqual(try XCTUnwrap(dataSource.outlineView(outlineView, child: 0, ofItem: nil) as? OutlineViewItem<[TestItem]>), items[0])
         XCTAssertEqual(try XCTUnwrap(dataSource.outlineView(outlineView, child: 1, ofItem: nil) as? OutlineViewItem<[TestItem]>), items[1])

@@ -178,8 +178,8 @@ public extension OutlineView {
     ///     as it is used to determine the height of the cell.
     init(
         _ data: Data,
-        selection: Binding<Data.Element?>,
         children: KeyPath<Data.Element, Data?>,
+        selection: Binding<Data.Element?>,
         content: @escaping (Data.Element) -> NSView
     ) {
         self.data = data
@@ -267,8 +267,8 @@ public extension OutlineView where Drop == NoDropReceiver<Data.Element> {
     ///     as it is used to determine the height of the cell.
     init(
         _ data: Data,
-        selection: Binding<Data.Element?>,
         children: KeyPath<Data.Element, Data?>,
+        selection: Binding<Data.Element?>,
         content: @escaping (Data.Element) -> NSView
     ) {
         self.data = data
