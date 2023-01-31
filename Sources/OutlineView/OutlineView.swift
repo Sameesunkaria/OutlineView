@@ -165,13 +165,13 @@ public extension OutlineView {
     ///
     /// - Parameters:
     ///   - data: A collection of tree-structured, identified data.
-    ///   - selection: A binding to a selected value.
     ///   - children: A key path to a property whose non-`nil` value gives the
     ///     children of `data`. A non-`nil` but empty value denotes an element
     ///     capable of having children that's currently childless, such as an
     ///     empty directory in a file system. On the other hand, if the property
     ///     at the key path is `nil`, then the outline view treats `data` as a
     ///     leaf in the tree, like a regular file in a file system.
+    ///   - selection: A binding to a selected value.
     ///   - content: A closure that produces an `NSView` based on an
     ///     element in `data`. An `NSTableCellView` subclass is preferred.
     ///     The `NSView` should return the correct `fittingSize`
@@ -183,8 +183,8 @@ public extension OutlineView {
         content: @escaping (Data.Element) -> NSView
     ) {
         self.data = data
-        self._selection = selection
         self.childSource = .keyPath(children)
+        self._selection = selection
         self.separatorVisibility = .hidden
         self.content = content
     }
@@ -254,13 +254,13 @@ public extension OutlineView where Drop == NoDropReceiver<Data.Element> {
     ///
     /// - Parameters:
     ///   - data: A collection of tree-structured, identified data.
-    ///   - selection: A binding to a selected value.
     ///   - children: A key path to a property whose non-`nil` value gives the
     ///     children of `data`. A non-`nil` but empty value denotes an element
     ///     capable of having children that's currently childless, such as an
     ///     empty directory in a file system. On the other hand, if the property
     ///     at the key path is `nil`, then the outline view treats `data` as a
     ///     leaf in the tree, like a regular file in a file system.
+    ///   - selection: A binding to a selected value.
     ///   - content: A closure that produces an `NSView` based on an
     ///     element in `data`. An `NSTableCellView` subclass is preferred.
     ///     The `NSView` should return the correct `fittingSize`
@@ -272,8 +272,8 @@ public extension OutlineView where Drop == NoDropReceiver<Data.Element> {
         content: @escaping (Data.Element) -> NSView
     ) {
         self.data = data
-        self._selection = selection
         self.childSource = .keyPath(children)
+        self._selection = selection
         self.separatorVisibility = .hidden
         self.content = content
     }
@@ -343,13 +343,13 @@ public extension OutlineView {
     ///
     /// - Parameters:
     ///   - data: A collection of tree-structured, identified data.
-    ///   - selection: A binding to a selected value.
     ///   - children: A key path to a property whose non-`nil` value gives the
     ///     children of `data`. A non-`nil` but empty value denotes an element
     ///     capable of having children that's currently childless, such as an
     ///     empty directory in a file system. On the other hand, if the property
     ///     at the key path is `nil`, then the outline view treats `data` as a
     ///     leaf in the tree, like a regular file in a file system.
+    ///   - selection: A binding to a selected value.
     ///   - separatorInsets: An optional closure that produces row separator lines
     ///     with the given insets for each item in the outline view. If this closure
     ///     is not provided (the default), separators are hidden.
@@ -360,14 +360,14 @@ public extension OutlineView {
     @available(macOS 11.0, *)
     init(
         _ data: Data,
-        selection: Binding<Data.Element?>,
         children: KeyPath<Data.Element, Data?>,
+        selection: Binding<Data.Element?>,
         separatorInsets: ((Data.Element) -> NSEdgeInsets)? = nil,
         content: @escaping (Data.Element) -> NSView
     ) {
         self.data = data
-        self._selection = selection
         self.childSource = .keyPath(children)
+        self._selection = selection
         self.separatorInsets = separatorInsets
         self.separatorVisibility = separatorInsets == nil ? .hidden : .visible
         self.content = content
@@ -460,14 +460,14 @@ public extension OutlineView where Drop == NoDropReceiver<Data.Element> {
     ///     as it is used to determine the height of the cell.
     init(
         _ data: Data,
-        selection: Binding<Data.Element?>,
         children: KeyPath<Data.Element, Data?>,
+        selection: Binding<Data.Element?>,
         separatorInsets: ((Data.Element) -> NSEdgeInsets)? = nil,
         content: @escaping (Data.Element) -> NSView
     ) {
         self.data = data
-        self._selection = selection
         self.childSource = .keyPath(children)
+        self._selection = selection
         self.separatorInsets = separatorInsets
         self.separatorVisibility = separatorInsets == nil ? .hidden : .visible
         self.content = content
@@ -513,8 +513,8 @@ public extension OutlineView where Drop == NoDropReceiver<Data.Element> {
         content: @escaping (Data.Element) -> NSView
     ) {
         self.data = data
-        self.childSource = .provider(children)
         self._selection = selection
+        self.childSource = .provider(children)
         self.separatorInsets = separatorInsets
         self.separatorVisibility = separatorInsets == nil ? .hidden : .visible
         self.content = content
