@@ -74,7 +74,7 @@ There are two types of `.children` parameters in the `OutlineView` initializers.
 
 ```swift
 // By passing a KeyPath to the children:
-OutlineView(data, selection: $selection, children: \.children) { item in
+OutlineView(data, children: \.children, selection: $selection) { item in
   NSTextField(string: item.description)
 }
 
