@@ -1,20 +1,20 @@
 import Cocoa
 
 @available(macOS 10.15, *)
-public class OutlineViewController<Data: Sequence>: NSViewController
-where Data.Element: Identifiable {
+public class OutlineViewController<Data: Sequence, Drop: DropReceiver>: NSViewController
+where Drop.DataElement == Data.Element {
     let outlineView = NSOutlineView()
     let scrollView = NSScrollView(frame: NSRect(x: 0, y: 0, width: 400, height: 400))
     
-    let dataSource: OutlineViewDataSource<Data>
+    let dataSource: OutlineViewDataSource<Data, Drop>
     let delegate: OutlineViewDelegate<Data>
     let updater = OutlineViewUpdater<Data>()
 
-    let childrenPath: KeyPath<Data.Element, Data?>
+    let childrenSource: ChildSource<Data>
 
     init(
         data: Data,
-        children: KeyPath<Data.Element, Data?>,
+        childrenSource: ChildSource<Data>,
         content: @escaping (Data.Element) -> NSView,
         selectionChanged: @escaping (Data.Element?) -> Void,
         separatorInsets: ((Data.Element) -> NSEdgeInsets)?
@@ -34,7 +34,9 @@ where Data.Element: Identifiable {
         outlineView.addTableColumn(onlyColumn)
 
         dataSource = OutlineViewDataSource(
-            items: data.map { OutlineViewItem(value: $0, children: children) })
+            items: data.map { OutlineViewItem(value: $0, children: childrenSource) },
+            childSource: childrenSource
+        )
         delegate = OutlineViewDelegate(
             content: content,
             selectionChanged: selectionChanged,
@@ -42,8 +44,8 @@ where Data.Element: Identifiable {
         outlineView.dataSource = dataSource
         outlineView.delegate = delegate
 
-        childrenPath = children
-
+        self.childrenSource = childrenSource
+        
         super.init(nibName: nil, bundle: nil)
 
         view.addSubview(scrollView)
@@ -77,24 +79,26 @@ where Data.Element: Identifiable {
 @available(macOS 10.15, *)
 extension OutlineViewController {
     func updateData(newValue: Data) {
-        let newState = newValue.map { OutlineViewItem(value: $0, children: childrenPath) }
+        let newState = newValue.map { OutlineViewItem(value: $0, children: childrenSource) }
 
         outlineView.beginUpdates()
 
-        let oldState = dataSource.items
         dataSource.items = newState
         updater.performUpdates(
             outlineView: outlineView,
-            oldState: oldState,
+            oldStateTree: dataSource.treeMap,
             newState: newState,
             parent: nil)
 
         outlineView.endUpdates()
+        
+        // After updates, dataSource must rebuild its idTree for future updates
+        dataSource.rebuildIDTree(rootItems: newState, outlineView: outlineView)
     }
 
     func changeSelectedItem(to item: Data.Element?) {
         delegate.changeSelectedItem(
-            to: item.map { OutlineViewItem(value: $0, children: childrenPath) },
+            to: item.map { OutlineViewItem(value: $0, children: childrenSource) },
             in: outlineView)
     }
 
@@ -123,5 +127,22 @@ extension OutlineViewController {
 
         outlineView.gridColor = color
         outlineView.reloadData()
+    }
+        
+    func setDragSourceWriter(_ writer: DragSourceWriter<Data.Element>?) {
+        dataSource.dragWriter = writer
+    }
+    
+    func setDropReceiver(_ receiver: Drop?) {
+        dataSource.dropReceiver = receiver
+    }
+    
+    func setAcceptedDragTypes(_ acceptedTypes: [NSPasteboard.PasteboardType]?) {
+        outlineView.unregisterDraggedTypes()
+        if let acceptedTypes,
+           !acceptedTypes.isEmpty
+        {
+            outlineView.registerForDraggedTypes(acceptedTypes)
+        }
     }
 }

@@ -16,7 +16,6 @@ class OutlineViewUpdaterTests: XCTestCase {
     ]
     .map { OutlineViewItem(value: $0, children: \TestItem.children) }
 
-
     let newState = [
         TestItem(id: 0, children: []),
         TestItem(id: 1, children: [TestItem(id: 4, children: nil)]),
@@ -28,11 +27,14 @@ class OutlineViewUpdaterTests: XCTestCase {
 
     func testPerformUpdates() {
         let outlineView = TestOutlineView()
-        let updater = OutlineViewUpdater<[TestItem]>()
+        var updater = OutlineViewUpdater<[TestItem]>()
+        updater.assumeOutlineIsExpanded = true
 
+        let oldStateTree = TreeMap(rootItems: oldState, itemIsExpanded: { _ in true })
+        
         updater.performUpdates(
             outlineView: outlineView,
-            oldState: oldState,
+            oldStateTree: oldStateTree,
             newState: newState,
             parent: nil)
 

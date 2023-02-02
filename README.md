@@ -4,7 +4,7 @@
 It provides a convenient wrapper around AppKit's `NSOutlineView`, similar to SwiftUI's `OutlineGroup` embedded in a `List` or a `List` with children. `OutlineView` provides it's own scroll view and doesn't have to be embedded in a `List`.
 
 <p align="center">
-  <img width="606" alt="Screenshot" src="Example/Screenshot.png">
+  <img width="606" alt="Screenshot" src="Examples/Screenshot.png">
 </p>
 
 ## Installation
@@ -60,18 +60,37 @@ let data = [
 
 @State var selection: FileItem?
 
-OutlineView(data, children: \.children, selection: $selection) { item in
+OutlineView(data, selection: $selection, children: \.children) { item in
   NSTextField(string: item.description)
 }
 ```
 
 ### Customization
 
+#### Children
+There are two types of `.children` parameters in the `OutlineView` initializers. You either provide the children for an item using:
+- A `KeyPath` pointing to an optional `Sequence` of the same type as the root data.
+- A closure that returns an optional `Sequence` of the same type as the root data, based on the parent item.
+
+```swift
+// By passing a KeyPath to the children:
+OutlineView(data, selection: $selection, children: \.children) { item in
+  NSTextField(string: item.description)
+}
+
+// By providing a closure that returns the children:
+OutlineView(data, selection: $selection) { item in 
+  dataSource.childrenOfItem(item) 
+} content: { item in
+  NSTextField(string: item.description)
+}
+```
+
 #### Style
 You can customize the look of the `OutlineView` by providing a preferred style (`NSOutlineView.Style`) in the `outlineViewStyle` method. The default value is `.automatic`.
 
 ```swift
-OutlineView(data, children: \.children, selection: $selection) { item in
+OutlineView(data, selection: $selection, children: \.children) { item in
   NSTextField(string: item.description)
 }
 .outlineViewStyle(.sourceList)
@@ -82,7 +101,7 @@ OutlineView(data, children: \.children, selection: $selection) { item in
 You can customize the indentation width for the `OutlineView`. Each child will be indented by this width, from the parent's leading inset. The default value is `13.0`.
 
 ```swift
-OutlineView(data, children: \.children, selection: $selection) { item in
+OutlineView(data, selection: $selection, children: \.children) { item in
   NSTextField(string: item.description)
 }
 .outlineViewIndentation(20)
@@ -93,7 +112,7 @@ OutlineView(data, children: \.children, selection: $selection) { item in
 You can customize the `OutlineView` to display row separators by using the `rowSeparator` modifier.
 
 ```swift
-OutlineView(data, children: \.children, selection: $selection) { item in
+OutlineView(data, selection: $selection, children: \.children) { item in
   NSTextField(string: item.description)
 }
 .rowSeparator(.visible)
@@ -108,8 +127,8 @@ let separatorInset = NSEdgeInsets(top: 0, left: 24, bottom: 0, right: 0)
 
 OutlineView(
   data, 
+  selection: $selection,
   children: \.children, 
-  selection: $selection
   separatorInsets: { item in separatorInset }) { item in
   NSTextField(string: item.description)
 }
@@ -120,12 +139,88 @@ OutlineView(
 You can customize the color of the row separators of the `OutlineView`. The default color is `NSColor.separatorColor`.
 
 ```swift
-OutlineView(data, children: \.children, selection: $selection) { item in
+OutlineView(data, selection: $selection, children: \.children) { item in
   NSTextField(string: item.description)
 }
 .rowSeparator(.visible)
 .rowSeparatorColor(.red)
 ```
+
+### Drag & Drop
+
+#### Dragging From `OutlineView`
+
+Add the `dragDataSource` modifier to the `OutlineView` to allow dragging rows from the `OutlineView`. The `dragDataSource` takes a closure that translates a data element into an optional `NSPasteboardItem`, with a `nil` value meaning the row can't be dragged).
+
+```swift
+extension NSPasteboard.PasteboardType {
+  static var myPasteboardType: Self {
+    PasteboardType("MySpecialPasteboardIdentifier")
+  }
+}
+
+outlineView
+  .dragDataSource { item in
+    let pasteboardItem = NSPasteboardItem()
+        pasteboardItem.setData(item.dataRepresentation, forType: .myPasteboardType)
+    return pasteboardItem
+  }
+```
+
+#### Dropping into `OutlineView`
+
+Drag events on the `OutlineView`, either from the `dragDataSource` modifier or from outside the `OutlineView`, can be handled by adding the `onDrop(of:receiver:)` modifier. This modifier takes  a list of supported `NSPasteboard.PasteboardType`s and a receiver instance conforming to the `DropReceiver` protocol. `DropReceiver` implements functions to validate a drop operation, read items from the dragging pasteboard, and update the data source when a drop is successful.
+
+```swift
+outlineView
+  .onDrop(of: [.myPasteboardType, .fileUrl], receiver: MyDropReceiver())
+  
+class MyDropReceiver: DropReceiver {
+  func readPasteboard(item: NSPasteboardItem) -> DraggedItem<DataElement>? {
+    guard let pasteboardType = item.availableType(from: pasteboardTypes) else { return nil }
+    
+    switch pasteboardType {
+      case .myPasteboardType:
+        if let draggedData = item.data(forType: .myPasteboardType) {
+          let draggedFileItem = /* instance of OutlineView.Data.Element from draggedData */
+          return (draggedFileItem, .myPasteboardType)
+        } else {
+          return nil
+        }
+      case .fileUrl:
+        if let draggedUrlString = item.string(forType: .fileUrl),
+           draggedUrl = URL(string: draggedUrlString)
+        {
+          let newFileItem = /* instance of OutlineView.Data.Element from draggedUrl */
+          return (newFileItem, .fileUrl)
+        } else {
+          return nil
+        }
+      default:
+        return nil
+    }
+  }
+  
+  func validateDrop(target: DropTarget<DataElement>) -> ValidationResult<DataElement> {
+    let draggedItems = target.draggedItems
+    
+    if draggedItems[0].type == .myPasteboardType {
+      return .move
+    } else if draggedItems[0].type == .fileUrl {
+      return .copy
+    } else {
+      return .deny
+    }
+  }
+  
+  func acceptDrop(target: DropTarget<DataElement>) -> Bool {
+    // update data source to reflect that drop was successful or not
+    return dropWasSuccessful
+  }
+}
+```
+
+For more details on the various types needed in `onDrop`, see `OutlineViewDragAndDrop.swift`, and the sample app `OutlineViewDraggingExample`.
 
 ## Why use `OutlineView` instead of the native `List` with children?
 

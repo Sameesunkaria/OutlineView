@@ -9,16 +9,24 @@
 @available(macOS 10.15, *)
 struct OutlineViewItem<Data: Sequence>: Equatable, Hashable, Identifiable
 where Data.Element: Identifiable {
-    var childrenPath: KeyPath<Data.Element, Data?>
+    var childSource: ChildSource<Data>
     var value: Data.Element
 
     var children: [OutlineViewItem]? {
-        value[keyPath: childrenPath]?.map { OutlineViewItem(value: $0, children: childrenPath) }
+        childSource.children(for: value)?.map { OutlineViewItem(value: $0, children: childSource) }
     }
 
     init(value: Data.Element, children: KeyPath<Data.Element, Data?>) {
+        self.init(value: value, children: .keyPath(children))
+    }
+    
+    init(value: Data.Element, children: @escaping (Data.Element) -> Data?) {
+        self.init(value: value, children: .provider(children))
+    }
+    
+    init(value: Data.Element, children: ChildSource<Data>) {
         self.value = value
-        childrenPath = children
+        self.childSource = children
     }
 
     var id: Data.Element.ID {

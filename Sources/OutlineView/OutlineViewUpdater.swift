@@ -3,34 +3,59 @@ import Cocoa
 @available(macOS 10.15, *)
 struct OutlineViewUpdater<Data: Sequence>
 where Data.Element: Identifiable {
+    /// variable for testing purposes. When set to false (the default),
+    /// `performUpdates` will escape its recursion for objects that are not
+    /// expanded in the outlineView.
+    var assumeOutlineIsExpanded = false
+    
     /// Perform updates on the outline view based on the change in state.
     /// - NOTE: Calls to this method must be surrounded by
     ///  `NSOutlineView.beginUpdates` and `NSOutlineView.endUpdates`.
     ///  `OutlineViewDataSource.items` should be updated to the new state before calling this method.
     func performUpdates(
         outlineView: NSOutlineView,
-        oldState: [OutlineViewItem<Data>]?,
+        oldStateTree: TreeMap<Data.Element.ID>?,
         newState: [OutlineViewItem<Data>]?,
         parent: OutlineViewItem<Data>?
     ) {
-        let oldNonOptionalState = oldState ?? []
+        // Get states to compare: oldIDs and newIDs, as related to the given parent object
+        let oldIDs: [Data.Element.ID]?
+        if let oldStateTree {
+            if let parent {
+                oldIDs = oldStateTree.currentChildrenOfItem(parent.id)
+            } else {
+                oldIDs = oldStateTree.rootData
+            }
+        } else {
+            oldIDs = nil
+        }
+        
         let newNonOptionalState = newState ?? []
 
-        guard oldState != nil || newState != nil else {
+        guard oldIDs != nil || newState != nil else {
             // Early exit. No state to compare.
             return
         }
 
-        let diff = newNonOptionalState.difference(
-            from: oldNonOptionalState, by: { $0.value.id == $1.value.id })
+        let oldNonOptionalIDs = oldIDs ?? []
+        let newIDs = newNonOptionalState.map { $0.id }
+        let diff = newIDs.difference(from: oldNonOptionalIDs)
 
-        if !diff.isEmpty || oldState != newState {
-            // Parent needs to be update as the children have changed.
+        if !diff.isEmpty || oldIDs != newIDs {
+            // Parent needs to be updated as the children have changed.
             // Children are not reloaded to allow animation.
             outlineView.reloadItem(parent, reloadChildren: false)
         }
+        
+        guard assumeOutlineIsExpanded || outlineView.isItemExpanded(parent) else {
+            // Another early exit. If item isn't expanded, no need to compare its children.
+            // They'll be updated when the item is later expanded.
+            return
+        }
 
-        var removedElements = [OutlineViewItem<Data>]()
+        var oldUnchangedElements = newNonOptionalState
+            .filter { oldNonOptionalIDs.contains($0.id) }
+            .reduce(into: [:], { $0[$1.id] = $1 })
 
         for change in diff {
             switch change {
@@ -41,7 +66,7 @@ where Data.Element: Identifiable {
                     withAnimation: .effectFade)
 
             case .remove(offset: let offset, element: let element, _):
-                removedElements.append(element)
+                oldUnchangedElements[element] = nil
                 outlineView.removeItems(
                     at: IndexSet([offset]),
                     inParent: parent,
@@ -49,15 +74,12 @@ where Data.Element: Identifiable {
             }
         }
 
-        var oldUnchangedElements = oldNonOptionalState.dictionaryFromIdentity()
-        removedElements.forEach { oldUnchangedElements.removeValue(forKey: $0.id) }
-
         let newStateDict = newNonOptionalState.dictionaryFromIdentity()
 
         oldUnchangedElements
             .keys
-            .map { (oldUnchangedElements[$0].unsafelyUnwrapped, newStateDict[$0].unsafelyUnwrapped) }
-            .map { (outlineView, $0.0.children, $0.1.children, $0.1) }
+            .map { newStateDict[$0].unsafelyUnwrapped }
+            .map { (outlineView, oldStateTree, $0.children, $0) }
             .forEach(performUpdates)
     }
 }
