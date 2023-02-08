@@ -17,15 +17,15 @@ enum ChildSource<Data: Sequence> {
 
 @available(macOS 10.15, *)
 public struct OutlineView<Data: Sequence, Drop: DropReceiver>: NSViewControllerRepresentable
-where Drop.DataElement == Data.Element {
+where Drop.DataElement == Data.Element, Data.Element: Hashable {
     public typealias NSViewControllerType = OutlineViewController<Data, Drop>
 
     let data: Data
     let childSource: ChildSource<Data>
-    @Binding var selection: Data.Element?
+    @Binding var selections: Set<Data.Element>
     var content: (Data.Element) -> NSView
     var separatorInsets: ((Data.Element) -> NSEdgeInsets)?
-
+    var allowsMultipleSelection = false
     /// Outline view style is unavailable on macOS 10.15 and below.
     /// Stored as `Any` to make the property available on all platforms.
     private var _styleStorage: Any?
@@ -55,7 +55,7 @@ where Drop.DataElement == Data.Element {
             data: data,
             childrenSource: childSource,
             content: content,
-            selectionChanged: { selection = $0 },
+            selectionChanged: { selections = $0 },
             separatorInsets: separatorInsets)
         controller.setIndentation(to: indentation)
         if #available(macOS 11.0, *) {
@@ -69,12 +69,13 @@ where Drop.DataElement == Data.Element {
         context: Context
     ) {
         outlineController.updateData(newValue: data)
-        outlineController.changeSelectedItem(to: selection)
+        outlineController.changeSelectedItem(to: selections)
         outlineController.setRowSeparator(visibility: separatorVisibility)
         outlineController.setRowSeparator(color: separatorColor)
         outlineController.setDragSourceWriter(dragDataSource)
         outlineController.setDropReceiver(dropReceiver)
         outlineController.setAcceptedDragTypes(acceptedDropTypes)
+        outlineController.setAllowsMultipleSelection(allowsMultipleSelection)
     }
 }
 
@@ -184,9 +185,31 @@ public extension OutlineView {
     ) {
         self.data = data
         self.childSource = .keyPath(children)
-        self._selection = selection
+        self._selections = .init {
+            if let sel = selection.wrappedValue {
+                return Set([sel])
+            }
+            
+            return Set()
+        } set: { newValue in
+            selection.wrappedValue = newValue.first
+        }
         self.separatorVisibility = .hidden
         self.content = content
+    }
+    
+    init(
+        _ data: Data,
+        children: KeyPath<Data.Element, Data?>,
+        selections: Binding<Set<Data.Element>>,
+        content: @escaping (Data.Element) -> NSView
+    ) {
+        self.data = data
+        self.childSource = .keyPath(children)
+        self._selections = selections
+        self.separatorVisibility = .hidden
+        self.content = content
+        self.allowsMultipleSelection = true
     }
 
     /// Creates an `OutlineView` from a collection of root data elements and
@@ -225,10 +248,32 @@ public extension OutlineView {
         content: @escaping (Data.Element) -> NSView
     ) {
         self.data = data
-        self._selection = selection
+        self._selections = .init {
+            if let sel = selection.wrappedValue {
+                return Set([sel])
+            }
+            
+            return Set()
+        } set: { newValue in
+            selection.wrappedValue = newValue.first
+        }
         self.childSource = .provider(children)
         self.separatorVisibility = .hidden
         self.content = content
+    }
+    
+    init(
+        _ data: Data,
+        selections: Binding<Set<Data.Element>>,
+        children: @escaping (Data.Element) -> Data?,
+        content: @escaping (Data.Element) -> NSView
+    ) {
+        self.data = data
+        self._selections = selections
+        self.childSource = .provider(children)
+        self.separatorVisibility = .hidden
+        self.content = content
+        self.allowsMultipleSelection = true
     }
 }
 
@@ -273,9 +318,31 @@ public extension OutlineView where Drop == NoDropReceiver<Data.Element> {
     ) {
         self.data = data
         self.childSource = .keyPath(children)
-        self._selection = selection
+        self._selections = .init {
+            if let sel = selection.wrappedValue {
+                return Set([sel])
+            }
+            
+            return Set()
+        } set: { newValue in
+            selection.wrappedValue = newValue.first
+        }
         self.separatorVisibility = .hidden
         self.content = content
+    }
+    
+    init(
+        _ data: Data,
+        children: KeyPath<Data.Element, Data?>,
+        selections: Binding<Set<Data.Element>>,
+        content: @escaping (Data.Element) -> NSView
+    ) {
+        self.data = data
+        self.childSource = .keyPath(children)
+        self._selections = selections
+        self.separatorVisibility = .hidden
+        self.content = content
+        self.allowsMultipleSelection = true
     }
 
     /// Creates an `OutlineView` from a collection of root data elements and
@@ -314,10 +381,32 @@ public extension OutlineView where Drop == NoDropReceiver<Data.Element> {
         content: @escaping (Data.Element) -> NSView
     ) {
         self.data = data
-        self._selection = selection
+        self._selections = .init {
+            if let sel = selection.wrappedValue {
+                return Set([sel])
+            }
+            
+            return Set()
+        } set: { newValue in
+            selection.wrappedValue = newValue.first
+        }
         self.childSource = .provider(children)
         self.separatorVisibility = .hidden
         self.content = content
+    }
+    
+    init(
+        _ data: Data,
+        selections: Binding<Set<Data.Element>>,
+        children: @escaping (Data.Element) -> Data?,
+        content: @escaping (Data.Element) -> NSView
+    ) {
+        self.data = data
+        self._selections = selections
+        self.childSource = .provider(children)
+        self.separatorVisibility = .hidden
+        self.content = content
+        self.allowsMultipleSelection = true
     }
 }
 
@@ -367,10 +456,35 @@ public extension OutlineView {
     ) {
         self.data = data
         self.childSource = .keyPath(children)
-        self._selection = selection
+        self._selections = .init {
+            if let sel = selection.wrappedValue {
+                return Set([sel])
+            }
+            
+            return Set()
+        } set: { newValue in
+            selection.wrappedValue = newValue.first
+        }
         self.separatorInsets = separatorInsets
         self.separatorVisibility = separatorInsets == nil ? .hidden : .visible
         self.content = content
+    }
+    
+    @available(macOS 11.0, *)
+    init(
+        _ data: Data,
+        children: KeyPath<Data.Element, Data?>,
+        selections: Binding<Set<Data.Element>>,
+        separatorInsets: ((Data.Element) -> NSEdgeInsets)? = nil,
+        content: @escaping (Data.Element) -> NSView
+    ) {
+        self.data = data
+        self.childSource = .keyPath(children)
+        self._selections = selections
+        self.separatorInsets = separatorInsets
+        self.separatorVisibility = separatorInsets == nil ? .hidden : .visible
+        self.content = content
+        self.allowsMultipleSelection = true
     }
 
     /// Creates an `OutlineView` from a collection of root data elements and
@@ -414,11 +528,36 @@ public extension OutlineView {
         content: @escaping (Data.Element) -> NSView
     ) {
         self.data = data
-        self._selection = selection
+        self._selections = .init {
+            if let sel = selection.wrappedValue {
+                return Set([sel])
+            }
+            
+            return Set()
+        } set: { newValue in
+            selection.wrappedValue = newValue.first
+        }
         self.childSource = .provider(children)
         self.separatorInsets = separatorInsets
         self.separatorVisibility = separatorInsets == nil ? .hidden : .visible
         self.content = content
+    }
+    
+    @available(macOS 11.0, *)
+    init(
+        _ data: Data,
+        selections: Binding<Set<Data.Element>>,
+        children: @escaping (Data.Element) -> Data?,
+        separatorInsets: ((Data.Element) -> NSEdgeInsets)? = nil,
+        content: @escaping (Data.Element) -> NSView
+    ) {
+        self.data = data
+        self._selections = selections
+        self.childSource = .provider(children)
+        self.separatorInsets = separatorInsets
+        self.separatorVisibility = separatorInsets == nil ? .hidden : .visible
+        self.content = content
+        self.allowsMultipleSelection = true
     }
 }
 
@@ -467,10 +606,34 @@ public extension OutlineView where Drop == NoDropReceiver<Data.Element> {
     ) {
         self.data = data
         self.childSource = .keyPath(children)
-        self._selection = selection
+        self._selections = .init {
+            if let sel = selection.wrappedValue {
+                return Set([sel])
+            }
+            
+            return Set()
+        } set: { newValue in
+            selection.wrappedValue = newValue.first
+        }
         self.separatorInsets = separatorInsets
         self.separatorVisibility = separatorInsets == nil ? .hidden : .visible
         self.content = content
+    }
+    
+    init(
+        _ data: Data,
+        children: KeyPath<Data.Element, Data?>,
+        selections: Binding<Set<Data.Element>>,
+        separatorInsets: ((Data.Element) -> NSEdgeInsets)? = nil,
+        content: @escaping (Data.Element) -> NSView
+    ) {
+        self.data = data
+        self.childSource = .keyPath(children)
+        self._selections = selections
+        self.separatorInsets = separatorInsets
+        self.separatorVisibility = separatorInsets == nil ? .hidden : .visible
+        self.content = content
+        self.allowsMultipleSelection = true
     }
 
     /// Creates an `OutlineView` from a collection of root data elements and
@@ -513,10 +676,34 @@ public extension OutlineView where Drop == NoDropReceiver<Data.Element> {
         content: @escaping (Data.Element) -> NSView
     ) {
         self.data = data
-        self._selection = selection
+        self._selections = .init {
+            if let sel = selection.wrappedValue {
+                return Set([sel])
+            }
+            
+            return Set()
+        } set: { newValue in
+            selection.wrappedValue = newValue.first
+        }
         self.childSource = .provider(children)
         self.separatorInsets = separatorInsets
         self.separatorVisibility = separatorInsets == nil ? .hidden : .visible
         self.content = content
+    }
+    
+    init(
+        _ data: Data,
+        selections: Binding<Set<Data.Element>>,
+        children: @escaping (Data.Element) -> Data?,
+        separatorInsets: ((Data.Element) -> NSEdgeInsets)? = nil,
+        content: @escaping (Data.Element) -> NSView
+    ) {
+        self.data = data
+        self._selections = selections
+        self.childSource = .provider(children)
+        self.separatorInsets = separatorInsets
+        self.separatorVisibility = separatorInsets == nil ? .hidden : .visible
+        self.content = content
+        self.allowsMultipleSelection = true
     }
 }

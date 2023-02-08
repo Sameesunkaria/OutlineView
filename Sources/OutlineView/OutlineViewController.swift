@@ -2,7 +2,7 @@ import Cocoa
 
 @available(macOS 10.15, *)
 public class OutlineViewController<Data: Sequence, Drop: DropReceiver>: NSViewController
-where Drop.DataElement == Data.Element {
+where Drop.DataElement == Data.Element, Data.Element: Hashable {
     let outlineView = NSOutlineView()
     let scrollView = NSScrollView(frame: NSRect(x: 0, y: 0, width: 400, height: 400))
     
@@ -16,7 +16,7 @@ where Drop.DataElement == Data.Element {
         data: Data,
         childrenSource: ChildSource<Data>,
         content: @escaping (Data.Element) -> NSView,
-        selectionChanged: @escaping (Data.Element?) -> Void,
+        selectionChanged: @escaping (Set<Data.Element>) -> Void,
         separatorInsets: ((Data.Element) -> NSEdgeInsets)?
     ) {
         scrollView.documentView = outlineView
@@ -28,7 +28,7 @@ where Drop.DataElement == Data.Element {
         outlineView.headerView = nil
         outlineView.usesAutomaticRowHeights = true
         outlineView.columnAutoresizingStyle = .uniformColumnAutoresizingStyle
-
+        
         let onlyColumn = NSTableColumn()
         onlyColumn.resizingMask = .autoresizingMask
         outlineView.addTableColumn(onlyColumn)
@@ -96,9 +96,9 @@ extension OutlineViewController {
         dataSource.rebuildIDTree(rootItems: newState, outlineView: outlineView)
     }
 
-    func changeSelectedItem(to item: Data.Element?) {
+    func changeSelectedItem(to items: Set<Data.Element>) {
         delegate.changeSelectedItem(
-            to: item.map { OutlineViewItem(value: $0, children: childrenSource) },
+            to: items.map { OutlineViewItem(value: $0, children: childrenSource) },
             in: outlineView)
     }
 
@@ -144,5 +144,9 @@ extension OutlineViewController {
         {
             outlineView.registerForDraggedTypes(acceptedTypes)
         }
+    }
+    
+    func setAllowsMultipleSelection(_ allowsMultipleSelection: Bool) {
+        outlineView.allowsMultipleSelection = allowsMultipleSelection
     }
 }
