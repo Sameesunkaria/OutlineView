@@ -2,11 +2,11 @@ import Cocoa
 
 @available(macOS 10.15, *)
 class OutlineViewDelegate<Data: Sequence>: NSObject, NSOutlineViewDelegate
-where Data.Element: Identifiable {
+where Data.Element: Identifiable & Hashable {
     let content: (Data.Element) -> NSView
-    let selectionChanged: (Data.Element?) -> Void
+    let selectionChanged: (Set<Data.Element>) -> Void
     let separatorInsets: ((Data.Element) -> NSEdgeInsets)?
-    var selectedItem: OutlineViewItem<Data>?
+    var selectedItems: [OutlineViewItem<Data>] = []
 
     func typedItem(_ item: Any) -> OutlineViewItem<Data> {
         item as! OutlineViewItem<Data>
@@ -14,7 +14,7 @@ where Data.Element: Identifiable {
 
     init(
         content: @escaping (Data.Element) -> NSView,
-        selectionChanged: @escaping (Data.Element?) -> Void,
+        selectionChanged: @escaping (Set<Data.Element>) -> Void,
         separatorInsets: ((Data.Element) -> NSEdgeInsets)?
     ) {
         self.content = content
@@ -102,27 +102,36 @@ where Data.Element: Identifiable {
     func outlineViewItemDidExpand(_ notification: Notification) {
         let outlineView = notification.object as! NSOutlineView
         if outlineView.selectedRow == -1 {
-            selectRow(for: selectedItem, in: outlineView)
+            selectRow(for: selectedItems, in: outlineView)
         }
     }
 
     func outlineViewSelectionDidChange(_ notification: Notification) {
         let outlineView = notification.object as! NSOutlineView
-        if outlineView.selectedRow != -1 {
-            let newSelection = outlineView.item(atRow: outlineView.selectedRow).map(typedItem)
-            if selectedItem?.id != newSelection?.id {
-                selectedItem = newSelection
-                selectionChanged(selectedItem?.value)
+        let selectedRowIndexes = outlineView.selectedRowIndexes
+        
+        if !selectedRowIndexes.isEmpty {
+            let newSelections = selectedRowIndexes.compactMap {
+                outlineView.item(atRow: $0).map(typedItem)
+            }
+            
+            if selectedItems.count == newSelections.count {
+                return
+            }
+                       
+            if selectedItems.allSatisfy({ newSelections.contains($0) }) {
+                selectedItems = newSelections
+                selectionChanged(Set(selectedItems.map(\.value)))
             }
         }
     }
 
     func selectRow(
-        for item: OutlineViewItem<Data>?,
+        for items: [OutlineViewItem<Data>],
         in outlineView: NSOutlineView
     ) {
         // Returns -1 if row is not found.
-        let index = outlineView.row(forItem: selectedItem)
+        let index = outlineView.row(forItem: selectedItems)
         if index != -1 {
             outlineView.selectRowIndexes(IndexSet([index]), byExtendingSelection: false)
         } else {
@@ -131,11 +140,10 @@ where Data.Element: Identifiable {
     }
 
     func changeSelectedItem(
-        to item: OutlineViewItem<Data>?,
+        to items: [OutlineViewItem<Data>],
         in outlineView: NSOutlineView
     ) {
-        guard selectedItem?.id != item?.id else { return }
-        selectedItem = item
-        selectRow(for: selectedItem, in: outlineView)
+        selectedItems = items
+        selectRow(for: selectedItems, in: outlineView)
     }
 }

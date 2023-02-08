@@ -13,7 +13,7 @@ struct ContentView: View {
     @Environment(\.colorScheme) var colorScheme
 
     @StateObject var dataSource = sampleDataSource()
-    @State var selection: FileItem?
+    @State var selections: Set<FileItem> = []
     @State var separatorColor: Color = Color(NSColor.separatorColor)
     @State var separatorEnabled = false
     
@@ -33,7 +33,7 @@ struct ContentView: View {
     var outlineView: some View {
         OutlineView(
             dataSource.rootData,
-            selection: $selection,
+            selections: $selections,
             children: dataSource.childrenOfItem,
             separatorInsets: { fileItem in
                 NSEdgeInsets(
