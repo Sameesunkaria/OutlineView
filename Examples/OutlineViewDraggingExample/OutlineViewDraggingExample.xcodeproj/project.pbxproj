@@ -7,24 +7,25 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		336C5FE225CC9F1600230C37 /* OutlineViewExampleApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 336C5FE125CC9F1600230C37 /* OutlineViewExampleApp.swift */; };
-		336C5FE425CC9F1600230C37 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 336C5FE325CC9F1600230C37 /* ContentView.swift */; };
-		336C5FE625CC9F1800230C37 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 336C5FE525CC9F1800230C37 /* Assets.xcassets */; };
-		336C5FE925CC9F1800230C37 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 336C5FE825CC9F1800230C37 /* Preview Assets.xcassets */; };
-		336C5FFD25CCA8DA00230C37 /* FileItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 336C5FFC25CCA8D900230C37 /* FileItemView.swift */; };
 		336C600325CCAEE700230C37 /* OutlineView in Frameworks */ = {isa = PBXBuildFile; productRef = 336C600225CCAEE700230C37 /* OutlineView */; };
+		94DB3C032950D3DB00515489 /* ViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94DB3BFD2950D1A700515489 /* ViewModel.swift */; };
+		94DB3C042950D3DF00515489 /* OutlineViewDraggingExampleApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94DB3C002950D1A700515489 /* OutlineViewDraggingExampleApp.swift */; };
+		94DB3C052950D3E200515489 /* FileItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94DB3BFA2950D1A700515489 /* FileItemView.swift */; };
+		94DB3C062950D3E400515489 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94DB3C012950D1A700515489 /* ContentView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		336C5FDE25CC9F1600230C37 /* OutlineViewExample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OutlineViewExample.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		336C5FE125CC9F1600230C37 /* OutlineViewExampleApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutlineViewExampleApp.swift; sourceTree = "<group>"; };
-		336C5FE325CC9F1600230C37 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		336C5FE525CC9F1800230C37 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		336C5FE825CC9F1800230C37 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
-		336C5FEA25CC9F1800230C37 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		336C5FEB25CC9F1800230C37 /* OutlineViewExample.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = OutlineViewExample.entitlements; sourceTree = "<group>"; };
-		336C5FFC25CCA8D900230C37 /* FileItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileItemView.swift; sourceTree = "<group>"; };
+		336C5FDE25CC9F1600230C37 /* OutlineViewDraggingExample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OutlineViewDraggingExample.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		336C600025CCAEDA00230C37 /* OutlineView */ = {isa = PBXFileReference; lastKnownFileType = folder; name = OutlineView; path = ../..; sourceTree = "<group>"; };
+		94899316296308A80018C5EA /* OutlineViewDraggingExample.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = OutlineViewDraggingExample.xcconfig; sourceTree = "<group>"; };
+		94DB3BFA2950D1A700515489 /* FileItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileItemView.swift; sourceTree = "<group>"; };
+		94DB3BFB2950D1A700515489 /* OutlineViewDraggingExample.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = OutlineViewDraggingExample.entitlements; sourceTree = "<group>"; };
+		94DB3BFC2950D1A700515489 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		94DB3BFD2950D1A700515489 /* ViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModel.swift; sourceTree = "<group>"; };
+		94DB3BFF2950D1A700515489 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		94DB3C002950D1A700515489 /* OutlineViewDraggingExampleApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutlineViewDraggingExampleApp.swift; sourceTree = "<group>"; };
+		94DB3C012950D1A700515489 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		94DB3C022950D1A700515489 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -43,7 +44,7 @@
 			isa = PBXGroup;
 			children = (
 				336C600025CCAEDA00230C37 /* OutlineView */,
-				336C5FE025CC9F1600230C37 /* OutlineViewExample */,
+				94DB3BF92950D1A700515489 /* OutlineViewDraggingExample */,
 				336C5FDF25CC9F1600230C37 /* Products */,
 				336C5FF825CC9F7600230C37 /* Frameworks */,
 			);
@@ -52,31 +53,9 @@
 		336C5FDF25CC9F1600230C37 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				336C5FDE25CC9F1600230C37 /* OutlineViewExample.app */,
+				336C5FDE25CC9F1600230C37 /* OutlineViewDraggingExample.app */,
 			);
 			name = Products;
-			sourceTree = "<group>";
-		};
-		336C5FE025CC9F1600230C37 /* OutlineViewExample */ = {
-			isa = PBXGroup;
-			children = (
-				336C5FE125CC9F1600230C37 /* OutlineViewExampleApp.swift */,
-				336C5FE325CC9F1600230C37 /* ContentView.swift */,
-				336C5FFC25CCA8D900230C37 /* FileItemView.swift */,
-				336C5FE525CC9F1800230C37 /* Assets.xcassets */,
-				336C5FEA25CC9F1800230C37 /* Info.plist */,
-				336C5FEB25CC9F1800230C37 /* OutlineViewExample.entitlements */,
-				336C5FE725CC9F1800230C37 /* Preview Content */,
-			);
-			path = OutlineViewExample;
-			sourceTree = "<group>";
-		};
-		336C5FE725CC9F1800230C37 /* Preview Content */ = {
-			isa = PBXGroup;
-			children = (
-				336C5FE825CC9F1800230C37 /* Preview Assets.xcassets */,
-			);
-			path = "Preview Content";
 			sourceTree = "<group>";
 		};
 		336C5FF825CC9F7600230C37 /* Frameworks */ = {
@@ -86,12 +65,36 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
+		94DB3BF92950D1A700515489 /* OutlineViewDraggingExample */ = {
+			isa = PBXGroup;
+			children = (
+				94DB3BFC2950D1A700515489 /* Assets.xcassets */,
+				94DB3C012950D1A700515489 /* ContentView.swift */,
+				94DB3BFA2950D1A700515489 /* FileItemView.swift */,
+				94DB3C022950D1A700515489 /* Info.plist */,
+				94DB3BFB2950D1A700515489 /* OutlineViewDraggingExample.entitlements */,
+				94DB3C002950D1A700515489 /* OutlineViewDraggingExampleApp.swift */,
+				94DB3BFE2950D1A700515489 /* Preview Content */,
+				94DB3BFD2950D1A700515489 /* ViewModel.swift */,
+				94899316296308A80018C5EA /* OutlineViewDraggingExample.xcconfig */,
+			);
+			path = OutlineViewDraggingExample;
+			sourceTree = "<group>";
+		};
+		94DB3BFE2950D1A700515489 /* Preview Content */ = {
+			isa = PBXGroup;
+			children = (
+				94DB3BFF2950D1A700515489 /* Preview Assets.xcassets */,
+			);
+			path = "Preview Content";
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		336C5FDD25CC9F1500230C37 /* OutlineViewExample */ = {
+		336C5FDD25CC9F1500230C37 /* OutlineViewDraggingExample */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 336C5FEE25CC9F1800230C37 /* Build configuration list for PBXNativeTarget "OutlineViewExample" */;
+			buildConfigurationList = 336C5FEE25CC9F1800230C37 /* Build configuration list for PBXNativeTarget "OutlineViewDraggingExample" */;
 			buildPhases = (
 				336C5FDA25CC9F1500230C37 /* Sources */,
 				336C5FDB25CC9F1500230C37 /* Frameworks */,
@@ -101,12 +104,12 @@
 			);
 			dependencies = (
 			);
-			name = OutlineViewExample;
+			name = OutlineViewDraggingExample;
 			packageProductDependencies = (
 				336C600225CCAEE700230C37 /* OutlineView */,
 			);
 			productName = OutlineViewExample;
-			productReference = 336C5FDE25CC9F1600230C37 /* OutlineViewExample.app */;
+			productReference = 336C5FDE25CC9F1600230C37 /* OutlineViewDraggingExample.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -123,7 +126,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 336C5FD925CC9F1500230C37 /* Build configuration list for PBXProject "OutlineViewExample" */;
+			buildConfigurationList = 336C5FD925CC9F1500230C37 /* Build configuration list for PBXProject "OutlineViewDraggingExample" */;
 			compatibilityVersion = "Xcode 9.3";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -136,7 +139,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				336C5FDD25CC9F1500230C37 /* OutlineViewExample */,
+				336C5FDD25CC9F1500230C37 /* OutlineViewDraggingExample */,
 			);
 		};
 /* End PBXProject section */
@@ -146,8 +149,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				336C5FE925CC9F1800230C37 /* Preview Assets.xcassets in Resources */,
-				336C5FE625CC9F1800230C37 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -158,9 +159,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				336C5FFD25CCA8DA00230C37 /* FileItemView.swift in Sources */,
-				336C5FE425CC9F1600230C37 /* ContentView.swift in Sources */,
-				336C5FE225CC9F1600230C37 /* OutlineViewExampleApp.swift in Sources */,
+				94DB3C052950D3E200515489 /* FileItemView.swift in Sources */,
+				94DB3C032950D3DB00515489 /* ViewModel.swift in Sources */,
+				94DB3C062950D3E400515489 /* ContentView.swift in Sources */,
+				94DB3C042950D3DF00515489 /* OutlineViewDraggingExampleApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -169,6 +171,7 @@
 /* Begin XCBuildConfiguration section */
 		336C5FEC25CC9F1800230C37 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 94899316296308A80018C5EA /* OutlineViewDraggingExample.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -230,6 +233,7 @@
 		};
 		336C5FED25CC9F1800230C37 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 94899316296308A80018C5EA /* OutlineViewDraggingExample.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -287,20 +291,19 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = OutlineViewExample/OutlineViewExample.entitlements;
+				CODE_SIGN_ENTITLEMENTS = OutlineViewDraggingExample/OutlineViewDraggingExample.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				DEVELOPMENT_ASSET_PATHS = "\"OutlineViewExample/Preview Content\"";
-				DEVELOPMENT_TEAM = AMSDNQC8GP;
+				DEVELOPMENT_ASSET_PATHS = "\"OutlineViewDraggingExample/Preview Content\"";
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
-				INFOPLIST_FILE = OutlineViewExample/Info.plist;
+				INFOPLIST_FILE = OutlineViewDraggingExample/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 11.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.samar.OutlineViewExample;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.example.OutlineViewDraggingExample${SAMPLE_CODE_DISAMBIGUATOR}";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 			};
@@ -311,20 +314,19 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = OutlineViewExample/OutlineViewExample.entitlements;
+				CODE_SIGN_ENTITLEMENTS = OutlineViewDraggingExample/OutlineViewDraggingExample.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				DEVELOPMENT_ASSET_PATHS = "\"OutlineViewExample/Preview Content\"";
-				DEVELOPMENT_TEAM = AMSDNQC8GP;
+				DEVELOPMENT_ASSET_PATHS = "\"OutlineViewDraggingExample/Preview Content\"";
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
-				INFOPLIST_FILE = OutlineViewExample/Info.plist;
+				INFOPLIST_FILE = OutlineViewDraggingExample/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 11.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.samar.OutlineViewExample;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.example.OutlineViewDraggingExample${SAMPLE_CODE_DISAMBIGUATOR}";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 			};
@@ -333,7 +335,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		336C5FD925CC9F1500230C37 /* Build configuration list for PBXProject "OutlineViewExample" */ = {
+		336C5FD925CC9F1500230C37 /* Build configuration list for PBXProject "OutlineViewDraggingExample" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				336C5FEC25CC9F1800230C37 /* Debug */,
@@ -342,7 +344,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		336C5FEE25CC9F1800230C37 /* Build configuration list for PBXNativeTarget "OutlineViewExample" */ = {
+		336C5FEE25CC9F1800230C37 /* Build configuration list for PBXNativeTarget "OutlineViewDraggingExample" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				336C5FEF25CC9F1800230C37 /* Debug */,

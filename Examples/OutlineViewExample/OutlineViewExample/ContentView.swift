@@ -79,9 +79,8 @@ struct ContentView: View {
     var outlineView: some View {
         OutlineView(
             data,
-            id: outlineId,
-            children: \.children,
             selection: $selection,
+            children: \.children,
             separatorInsets: { fileItem in
                 NSEdgeInsets(
                     top: 0,
