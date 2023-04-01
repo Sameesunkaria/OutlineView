@@ -16,16 +16,16 @@ enum ChildSource<Data: Sequence> {
 }
 
 @available(macOS 10.15, *)
-public struct OutlineView<ID: Hashable, Data: Sequence, Drop: DropReceiver>: NSViewControllerRepresentable
+public struct OutlineView<Data: Sequence, Drop: DropReceiver>: NSViewControllerRepresentable
 where Drop.DataElement == Data.Element {
-    public typealias NSViewControllerType = OutlineViewController<ID, Data, Drop>
+    public typealias NSViewControllerType = OutlineViewController<Data, Drop>
 
-    let id: ID
     let data: Data
     let childSource: ChildSource<Data>
     @Binding var selection: Data.Element?
     var content: (Data.Element) -> NSView
     var separatorInsets: ((Data.Element) -> NSEdgeInsets)?
+    var reloadID = UUID()
 
     /// Outline view style is unavailable on macOS 10.15 and below.
     /// Stored as `Any` to make the property available on all platforms.
@@ -76,6 +76,8 @@ where Drop.DataElement == Data.Element {
         outlineController.setDragSourceWriter(dragDataSource)
         outlineController.setDropReceiver(dropReceiver)
         outlineController.setAcceptedDragTypes(acceptedDropTypes)
+        
+        outlineController.setReloadID(reloadID)
     }
 }
 
@@ -142,6 +144,15 @@ public extension OutlineView {
         mutableSelf.dragDataSource = writer
         return mutableSelf
     }
+    
+    /// Sets the unique reload identifier for the `OutlineView`, which can be
+    /// used to force data reloads using the static function
+    /// `triggerReloadOfOutlineView(id:itemIds:)`
+    func reloadIdentifier(_ reloadID: UUID) -> Self {
+        var mutableSelf = self
+        mutableSelf.reloadID = reloadID
+        return mutableSelf
+    }
 }
 
 // MARK: - Initializers for macOS 10.15 and higher.
@@ -166,8 +177,6 @@ public extension OutlineView {
     ///
     /// - Parameters:
     ///   - data: A collection of tree-structured, identified data.
-    ///   - id: A unique identifier that can be used to force reloads of the
-    ///     outlineView data by calling `triggerReloadOfOutlineView(id:)`
     ///   - children: A key path to a property whose non-`nil` value gives the
     ///     children of `data`. A non-`nil` but empty value denotes an element
     ///     capable of having children that's currently childless, such as an
@@ -181,12 +190,10 @@ public extension OutlineView {
     ///     as it is used to determine the height of the cell.
     init(
         _ data: Data,
-        id: ID,
         children: KeyPath<Data.Element, Data?>,
         selection: Binding<Data.Element?>,
         content: @escaping (Data.Element) -> NSView
     ) {
-        self.id = id
         self.data = data
         self.childSource = .keyPath(children)
         self._selection = selection
@@ -259,8 +266,6 @@ public extension OutlineView where Drop == NoDropReceiver<Data.Element> {
     ///
     /// - Parameters:
     ///   - data: A collection of tree-structured, identified data.
-    ///   - id: A unique identifier that can be used to force reloads of the
-    ///     outlineView data by calling `triggerReloadOfOutlineView(id:)`
     ///   - children: A key path to a property whose non-`nil` value gives the
     ///     children of `data`. A non-`nil` but empty value denotes an element
     ///     capable of having children that's currently childless, such as an
@@ -274,12 +279,10 @@ public extension OutlineView where Drop == NoDropReceiver<Data.Element> {
     ///     as it is used to determine the height of the cell.
     init(
         _ data: Data,
-        id: ID,
         children: KeyPath<Data.Element, Data?>,
         selection: Binding<Data.Element?>,
         content: @escaping (Data.Element) -> NSView
     ) {
-        self.id = id
         self.data = data
         self.childSource = .keyPath(children)
         self._selection = selection
@@ -317,7 +320,6 @@ public extension OutlineView where Drop == NoDropReceiver<Data.Element> {
     ///     The `NSView` should return the correct `fittingSize`
     ///     as it is used to determine the height of the cell.
     init(
-        id: id,
         _ data: Data,
         selection: Binding<Data.Element?>,
         children: @escaping (Data.Element) -> Data?,

@@ -8,11 +8,12 @@ extension Notification.Name {
     }
 }
 
-/// Manually forces an OutlineView to reload its row data, which
-/// may be necessary if normal state property changes don't cause
+/// Forces an `OutlineView` to reload its row data, which may
+/// be necessary if normal state property changes don't cause
 /// data updates.
-/// - Parameter id: The id of the OutlineView to be reloaded.
-public func triggerReloadOfOutlineView<K: Hashable>(id: K) {
+///
+/// - Parameter id: The reloadIdentifier of the `OutlineView` to reload.
+public func triggerReloadOfOutlineView(id: UUID) {
     NotificationCenter.default.post(
         name: .OutlineViewReload,
         object: nil,
@@ -20,15 +21,15 @@ public func triggerReloadOfOutlineView<K: Hashable>(id: K) {
     )
 }
 
-/// Manually forces an OutlineView to reload its row data for a given
-/// group of rows by id, which may be necessary if normal state property
+/// Forces an `OutlineView` to reload its row data for a given group
+/// of rows by id, which may be necessary if normal state property
 /// changes don't cause data updates.
 ///
 /// - Parameters:
-///   - id: The id of the OutlineView to be reloaded.
+///   - id: The reloadIdentifier of the `OutlineView` to reload.
 ///   - itemIds: Array of ids of items in the `OutlineView` that need to
 ///     be reloaded.
-public func triggerReloadOfOutlineView<K: Hashable, L: Hashable>(id: K, itemIds: [L]) {
+public func triggerReloadOfOutlineView<L: Hashable>(id: UUID, itemIds: [L]) {
     NotificationCenter.default.post(
         name: .OutlineViewReload,
         object: nil,
@@ -40,8 +41,8 @@ public func triggerReloadOfOutlineView<K: Hashable, L: Hashable>(id: K, itemIds:
 }
 
 extension Notification {
-    func outlineId<K: Hashable>(as type: K.Type) -> K? {
-        userInfo?["id"] as? K
+    var outlineId: UUID? {
+        userInfo?["id"] as? UUID
     }
     
     func outlineItemIds<L: Hashable>(as type: L.Type) -> [L]? {

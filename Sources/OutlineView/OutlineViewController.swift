@@ -2,12 +2,12 @@ import Cocoa
 import Combine
 
 @available(macOS 10.15, *)
-public class OutlineViewController<ID: Hashable, Data: Sequence, Drop: DropReceiver>: NSViewController
+public class OutlineViewController<Data: Sequence, Drop: DropReceiver>: NSViewController
 where Drop.DataElement == Data.Element {
     let outlineView = NSOutlineView()
     let scrollView = NSScrollView(frame: NSRect(x: 0, y: 0, width: 400, height: 400))
     
-    let id: ID
+    var reloadID = UUID()
     let dataSource: OutlineViewDataSource<Data, Drop>
     let delegate: OutlineViewDelegate<Data>
     let updater = OutlineViewUpdater<Data>()
@@ -16,7 +16,6 @@ where Drop.DataElement == Data.Element {
     let childrenSource: ChildSource<Data>
 
     init(
-        id: ID,
         data: Data,
         childrenSource: ChildSource<Data>,
         content: @escaping (Data.Element) -> NSView,
@@ -48,7 +47,6 @@ where Drop.DataElement == Data.Element {
         outlineView.dataSource = dataSource
         outlineView.delegate = delegate
 
-        self.id = id
         self.childrenSource = childrenSource
         
         super.init(nibName: nil, bundle: nil)
@@ -65,7 +63,9 @@ where Drop.DataElement == Data.Element {
         reloadListener = NotificationCenter
             .default
             .publisher(for: .OutlineViewReload)
-            .filter { $0.outlineId(as: ID.self) == id }
+            .filter { [weak self] in
+                $0.outlineId == self?.reloadID
+            }
             .sink { [weak self] note in
                 let itemIds = note.outlineItemIds(as: Data.Element.ID.self)
                 self?.reloadRowData(itemIds: itemIds)
@@ -191,5 +191,9 @@ extension OutlineViewController {
         {
             outlineView.registerForDraggedTypes(acceptedTypes)
         }
+    }
+    
+    func setReloadID(_ newID: UUID) {
+        self.reloadID = newID
     }
 }
