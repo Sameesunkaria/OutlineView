@@ -1,9 +1,9 @@
 import Cocoa
 
 @available(macOS 10.15, *)
-class OutlineViewDelegate<Data: Sequence>: NSObject, NSOutlineViewDelegate
+class OutlineViewDelegate<Data: Sequence, CellType: NSView>: NSObject, NSOutlineViewDelegate
 where Data.Element: Identifiable {
-    let content: (Data.Element) -> NSView
+    let content: CellBuilder<Data, CellType>
     let selectionChanged: (Data.Element?) -> Void
     let separatorInsets: ((Data.Element) -> NSEdgeInsets)?
     var selectedItem: OutlineViewItem<Data>?
@@ -13,7 +13,7 @@ where Data.Element: Identifiable {
     }
 
     init(
-        content: @escaping (Data.Element) -> NSView,
+        content: CellBuilder<Data, CellType>,
         selectionChanged: @escaping (Data.Element?) -> Void,
         separatorInsets: ((Data.Element) -> NSEdgeInsets)?
     ) {
@@ -27,7 +27,7 @@ where Data.Element: Identifiable {
         viewFor tableColumn: NSTableColumn?,
         item: Any
     ) -> NSView? {
-        content(typedItem(item).value)
+        content.cell(in: outlineView, item: typedItem(item).value)
     }
 
     func outlineView(
@@ -94,7 +94,7 @@ where Data.Element: Identifiable {
         // separately. It does not seem efficient to create a new cell to find
         // out the width of a cell. In practice I have not experienced any issues
         // with a moderate number of cells.
-        let view = content(typedItem(item).value)
+        let view = content.cell(in: outlineView, item: typedItem(item).value)
         view.widthAnchor.constraint(equalToConstant: width).isActive = true
         return view.fittingSize.height
     }

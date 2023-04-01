@@ -1,13 +1,13 @@
 import Cocoa
 
 @available(macOS 10.15, *)
-public class OutlineViewController<Data: Sequence, Drop: DropReceiver>: NSViewController
+public class OutlineViewController<Data: Sequence, Drop: DropReceiver, CellType: NSView>: NSViewController
 where Drop.DataElement == Data.Element {
     let outlineView = NSOutlineView()
     let scrollView = NSScrollView(frame: NSRect(x: 0, y: 0, width: 400, height: 400))
     
     let dataSource: OutlineViewDataSource<Data, Drop>
-    let delegate: OutlineViewDelegate<Data>
+    let delegate: OutlineViewDelegate<Data, CellType>
     let updater = OutlineViewUpdater<Data>()
 
     let childrenSource: ChildSource<Data>
@@ -15,7 +15,7 @@ where Drop.DataElement == Data.Element {
     init(
         data: Data,
         childrenSource: ChildSource<Data>,
-        content: @escaping (Data.Element) -> NSView,
+        content: CellBuilder<Data, CellType>,
         selectionChanged: @escaping (Data.Element?) -> Void,
         separatorInsets: ((Data.Element) -> NSEdgeInsets)?
     ) {
