@@ -15,15 +15,36 @@ enum ChildSource<Data: Sequence> {
     }
 }
 
+enum CellBuilder<Data: Sequence, ViewType: NSView> {
+    case singleUse((Data.Element) -> ViewType)
+    case reusable((ViewType?, Data.Element) -> ViewType)
+    
+    func cell(in outlineView: NSOutlineView, item: Data.Element) -> ViewType {
+        switch self {
+        case .singleUse(let builder):
+            return builder(item)
+        case .reusable(let builder):
+            let reuseIdentifier = NSUserInterfaceItemIdentifier(rawValue: String(describing: ViewType.self))
+            if let reusedView = outlineView.makeView(withIdentifier: reuseIdentifier, owner: nil) as? ViewType {
+                return builder(reusedView, item)
+            } else {
+                let newView = builder(nil, item)
+                newView.identifier = reuseIdentifier
+                return newView
+            }
+        }
+    }
+}
+
 @available(macOS 10.15, *)
-public struct OutlineView<Data: Sequence, Drop: DropReceiver>: NSViewControllerRepresentable
+public struct OutlineView<Data: Sequence, Drop: DropReceiver, CellType: NSView>: NSViewControllerRepresentable
 where Drop.DataElement == Data.Element {
-    public typealias NSViewControllerType = OutlineViewController<Data, Drop>
+    public typealias NSViewControllerType = OutlineViewController<Data, Drop, CellType>
 
     let data: Data
     let childSource: ChildSource<Data>
     @Binding var selection: Data.Element?
-    var content: (Data.Element) -> NSView
+    var content: CellBuilder<Data, CellType>
     var separatorInsets: ((Data.Element) -> NSEdgeInsets)?
 
     /// Outline view style is unavailable on macOS 10.15 and below.
@@ -50,8 +71,8 @@ where Drop.DataElement == Data.Element {
 
     // MARK: NSViewControllerRepresentable
     
-    public func makeNSViewController(context: Context) -> OutlineViewController<Data, Drop> {
-        let controller = OutlineViewController<Data, Drop>(
+    public func makeNSViewController(context: Context) -> OutlineViewController<Data, Drop, CellType> {
+        let controller = OutlineViewController<Data, Drop, CellType>(
             data: data,
             childrenSource: childSource,
             content: content,
@@ -65,7 +86,7 @@ where Drop.DataElement == Data.Element {
     }
 
     public func updateNSViewController(
-        _ outlineController: OutlineViewController<Data, Drop>,
+        _ outlineController: OutlineViewController<Data, Drop, CellType>,
         context: Context
     ) {
         outlineController.updateData(newValue: data)
@@ -143,10 +164,10 @@ public extension OutlineView {
     }
 }
 
-// MARK: - Initializers for macOS 10.15 and higher.
+// MARK: - Initializers for macOS 10.15 and higher, no cell reuse.
 
 @available(macOS 10.15, *)
-public extension OutlineView {
+public extension OutlineView where CellType == NSView {
     /// Creates an `OutlineView` from a collection of root data elements and
     /// a key path to its children.
     ///
@@ -186,7 +207,7 @@ public extension OutlineView {
         self.childSource = .keyPath(children)
         self._selection = selection
         self.separatorVisibility = .hidden
-        self.content = content
+        self.content = .singleUse(content)
     }
 
     /// Creates an `OutlineView` from a collection of root data elements and
@@ -228,11 +249,194 @@ public extension OutlineView {
         self._selection = selection
         self.childSource = .provider(children)
         self.separatorVisibility = .hidden
-        self.content = content
+        self.content = .singleUse(content)
     }
 }
 
-// MARK: Initializers for macOS 10.15 and higher with NoDropReceiver.
+// MARK: Initializers for macOS 10.15 and higher, with cell reuse.
+
+@available(macOS 10.15, *)
+public extension OutlineView {
+    /// Creates an `OutlineView` from a collection of root data elements and
+    /// a key path to its children.
+    ///
+    /// This initializer creates an instance that uniquely identifies views
+    /// across updates based on the identity of the underlying data element.
+    ///
+    /// All generated rows begin in the collapsed state.
+    ///
+    /// Make sure that the identifier of a data element only changes if you
+    /// mean to replace that element with a new element, one with a new
+    /// identity. If the ID of an element changes, then the content view
+    /// generated from that element will lose any current state and animations.
+    ///
+    /// - NOTE: All elements in data should be uniquely identified. Data with
+    /// elements that have a repeated identity are not supported.
+    ///
+    /// - Parameters:
+    ///   - data: A collection of tree-structured, identified data.
+    ///   - children: A key path to a property whose non-`nil` value gives the
+    ///     children of `data`. A non-`nil` but empty value denotes an element
+    ///     capable of having children that's currently childless, such as an
+    ///     empty directory in a file system. On the other hand, if the property
+    ///     at the key path is `nil`, then the outline view treats `data` as a
+    ///     leaf in the tree, like a regular file in a file system.
+    ///   - selection: A binding to a selected value.
+    ///   - content: A closure that produces an `NSView` to populate a row in the
+    ///     `OutlineView`. An `NStableCellView` subclass is preferred. The `NSView`
+    ///     should set the correct `fittingSize`, as it is used to determine the
+    ///     height of the cell. The closure provides an optional, reused instance
+    ///     of the `NSView` that can be configured and returned in order to avoid
+    ///     unnecessary initializations of new cell views.
+    init(
+        _ data: Data,
+        children: KeyPath<Data.Element, Data?>,
+        selection: Binding<Data.Element?>,
+        content: @escaping (CellType?, Data.Element) -> CellType
+    ) {
+        self.data = data
+        self.childSource = .keyPath(children)
+        self._selection = selection
+        self.separatorVisibility = .hidden
+        self.content = .reusable(content)
+    }
+
+    /// Creates an `OutlineView` from a collection of root data elements and
+    /// a closure that provides children to each element.
+    ///
+    /// This initializer creates an instance that uniquely identifies views
+    /// across updates based on the identity of the underlying data element.
+    ///
+    /// All generated rows begin in the collapsed state.
+    ///
+    /// Make sure that the identifier of a data element only changes if you
+    /// mean to replace that element with a new element, one with a new
+    /// identity. If the ID of an element changes, then the content view
+    /// generated from that element will lose any current state and animations.
+    ///
+    /// - NOTE: All elements in data should be uniquely identified. Data with
+    /// elements that have a repeated identity are not supported.
+    ///
+    /// - Parameters:
+    ///   - data: A collection of tree-structured, identified data.
+    ///   - selection: A binding to a selected value.
+    ///   - children: A closure whose non-`nil` return value gives the
+    ///     children of `data`. A non-`nil` but empty value denotes an element
+    ///     capable of having children that's currently childless, such as an
+    ///     empty directory in a file system. On the other hand, if the value
+    ///     from the closure is `nil`, then the outline view treats `data` as a
+    ///     leaf in the tree, like a regular file in a file system.
+    ///   - content: A closure that produces an `NSView` to populate a row in the
+    ///     `OutlineView`. An `NStableCellView` subclass is preferred. The `NSView`
+    ///     should set the correct `fittingSize`, as it is used to determine the
+    ///     height of the cell. The closure provides an optional, reused instance
+    ///     of the `NSView` that can be configured and returned in order to avoid
+    ///     unnecessary initializations of new cell views.
+    init(
+        _ data: Data,
+        selection: Binding<Data.Element?>,
+        children: @escaping (Data.Element) -> Data?,
+        content: @escaping (CellType?, Data.Element) -> CellType
+    ) {
+        self.data = data
+        self._selection = selection
+        self.childSource = .provider(children)
+        self.separatorVisibility = .hidden
+        self.content = .reusable(content)
+    }
+}
+
+
+// MARK: Initializers for macOS 10.15 and higher with no cell reuse, and NoDropReceiver.
+
+@available(macOS 10.15, *)
+public extension OutlineView where Drop == NoDropReceiver<Data.Element>, CellType == NSView {
+    /// Creates an `OutlineView` from a collection of root data elements and
+    /// a key path to its children.
+    ///
+    /// This initializer creates an instance that uniquely identifies views
+    /// across updates based on the identity of the underlying data element.
+    ///
+    /// All generated rows begin in the collapsed state.
+    ///
+    /// Make sure that the identifier of a data element only changes if you
+    /// mean to replace that element with a new element, one with a new
+    /// identity. If the ID of an element changes, then the content view
+    /// generated from that element will lose any current state and animations.
+    ///
+    /// - NOTE: All elements in data should be uniquely identified. Data with
+    /// elements that have a repeated identity are not supported.
+    ///
+    /// - Parameters:
+    ///   - data: A collection of tree-structured, identified data.
+    ///   - children: A key path to a property whose non-`nil` value gives the
+    ///     children of `data`. A non-`nil` but empty value denotes an element
+    ///     capable of having children that's currently childless, such as an
+    ///     empty directory in a file system. On the other hand, if the property
+    ///     at the key path is `nil`, then the outline view treats `data` as a
+    ///     leaf in the tree, like a regular file in a file system.
+    ///   - selection: A binding to a selected value.
+    ///   - content: A closure that produces an `NSView` based on an
+    ///     element in `data`. An `NSTableCellView` subclass is preferred.
+    ///     The `NSView` should return the correct `fittingSize`
+    ///     as it is used to determine the height of the cell.
+    init(
+        _ data: Data,
+        children: KeyPath<Data.Element, Data?>,
+        selection: Binding<Data.Element?>,
+        content: @escaping (Data.Element) -> NSView
+    ) {
+        self.data = data
+        self.childSource = .keyPath(children)
+        self._selection = selection
+        self.separatorVisibility = .hidden
+        self.content = .singleUse(content)
+    }
+
+    /// Creates an `OutlineView` from a collection of root data elements and
+    /// a closure that provides children to each element.
+    ///
+    /// This initializer creates an instance that uniquely identifies views
+    /// across updates based on the identity of the underlying data element.
+    ///
+    /// All generated rows begin in the collapsed state.
+    ///
+    /// Make sure that the identifier of a data element only changes if you
+    /// mean to replace that element with a new element, one with a new
+    /// identity. If the ID of an element changes, then the content view
+    /// generated from that element will lose any current state and animations.
+    ///
+    /// - NOTE: All elements in data should be uniquely identified. Data with
+    /// elements that have a repeated identity are not supported.
+    ///
+    /// - Parameters:
+    ///   - data: A collection of tree-structured, identified data.
+    ///   - selection: A binding to a selected value.
+    ///   - children: A closure whose non-`nil` return value gives the
+    ///     children of `data`. A non-`nil` but empty value denotes an element
+    ///     capable of having children that's currently childless, such as an
+    ///     empty directory in a file system. On the other hand, if the value
+    ///     from the closure is `nil`, then the outline view treats `data` as a
+    ///     leaf in the tree, like a regular file in a file system.
+    ///   - content: A closure that produces an `NSView` based on an
+    ///     element in `data`. An `NSTableCellView` subclass is preferred.
+    ///     The `NSView` should return the correct `fittingSize`
+    ///     as it is used to determine the height of the cell.
+    init(
+        _ data: Data,
+        selection: Binding<Data.Element?>,
+        children: @escaping (Data.Element) -> Data?,
+        content: @escaping (Data.Element) -> NSView
+    ) {
+        self.data = data
+        self._selection = selection
+        self.childSource = .provider(children)
+        self.separatorVisibility = .hidden
+        self.content = .singleUse(content)
+    }
+}
+
+// MARK: Initializers for macOS 10.15 and higher with cell reuse, and NoDropReceiver.
 
 @available(macOS 10.15, *)
 public extension OutlineView where Drop == NoDropReceiver<Data.Element> {
@@ -261,21 +465,23 @@ public extension OutlineView where Drop == NoDropReceiver<Data.Element> {
     ///     at the key path is `nil`, then the outline view treats `data` as a
     ///     leaf in the tree, like a regular file in a file system.
     ///   - selection: A binding to a selected value.
-    ///   - content: A closure that produces an `NSView` based on an
-    ///     element in `data`. An `NSTableCellView` subclass is preferred.
-    ///     The `NSView` should return the correct `fittingSize`
-    ///     as it is used to determine the height of the cell.
+    ///   - content: A closure that produces an `NSView` to populate a row in the
+    ///     `OutlineView`. An `NStableCellView` subclass is preferred. The `NSView`
+    ///     should set the correct `fittingSize`, as it is used to determine the
+    ///     height of the cell. The closure provides an optional, reused instance
+    ///     of the `NSView` that can be configured and returned in order to avoid
+    ///     unnecessary initializations of new cell views.
     init(
         _ data: Data,
         children: KeyPath<Data.Element, Data?>,
         selection: Binding<Data.Element?>,
-        content: @escaping (Data.Element) -> NSView
+        content: @escaping (CellType?, Data.Element) -> CellType
     ) {
         self.data = data
         self.childSource = .keyPath(children)
         self._selection = selection
         self.separatorVisibility = .hidden
-        self.content = content
+        self.content = .reusable(content)
     }
 
     /// Creates an `OutlineView` from a collection of root data elements and
@@ -303,28 +509,30 @@ public extension OutlineView where Drop == NoDropReceiver<Data.Element> {
     ///     empty directory in a file system. On the other hand, if the value
     ///     from the closure is `nil`, then the outline view treats `data` as a
     ///     leaf in the tree, like a regular file in a file system.
-    ///   - content: A closure that produces an `NSView` based on an
-    ///     element in `data`. An `NSTableCellView` subclass is preferred.
-    ///     The `NSView` should return the correct `fittingSize`
-    ///     as it is used to determine the height of the cell.
+    ///   - content: A closure that produces an `NSView` to populate a row in the
+    ///     `OutlineView`. An `NStableCellView` subclass is preferred. The `NSView`
+    ///     should set the correct `fittingSize`, as it is used to determine the
+    ///     height of the cell. The closure provides an optional, reused instance
+    ///     of the `NSView` that can be configured and returned in order to avoid
+    ///     unnecessary initializations of new cell views.
     init(
         _ data: Data,
         selection: Binding<Data.Element?>,
         children: @escaping (Data.Element) -> Data?,
-        content: @escaping (Data.Element) -> NSView
+        content: @escaping (CellType?, Data.Element) -> CellType
     ) {
         self.data = data
         self._selection = selection
         self.childSource = .provider(children)
         self.separatorVisibility = .hidden
-        self.content = content
+        self.content = .reusable(content)
     }
 }
 
-// MARK: Initializers for macOS 11 and higher.
+// MARK: Initializers for macOS 11 and higher, with no cell reuse.
 
 @available(macOS 11.0, *)
-public extension OutlineView {
+public extension OutlineView where CellType == NSView {
     /// Creates an `OutlineView` from a collection of root data elements and
     /// a key path to its children.
     ///
@@ -370,7 +578,7 @@ public extension OutlineView {
         self._selection = selection
         self.separatorInsets = separatorInsets
         self.separatorVisibility = separatorInsets == nil ? .hidden : .visible
-        self.content = content
+        self.content = .singleUse(content)
     }
 
     /// Creates an `OutlineView` from a collection of root data elements and
@@ -418,14 +626,119 @@ public extension OutlineView {
         self.childSource = .provider(children)
         self.separatorInsets = separatorInsets
         self.separatorVisibility = separatorInsets == nil ? .hidden : .visible
-        self.content = content
+        self.content = .singleUse(content)
     }
 }
 
-// MARK: Initializers for macOS 11 and higher with NoDropReceiver.
+// MARK: Initializers for macOS 11 and higher, with cell reuse.
 
 @available(macOS 11.0, *)
-public extension OutlineView where Drop == NoDropReceiver<Data.Element> {
+public extension OutlineView {
+    /// Creates an `OutlineView` from a collection of root data elements and
+    /// a key path to its children.
+    ///
+    /// This initializer creates an instance that uniquely identifies views
+    /// across updates based on the identity of the underlying data element.
+    ///
+    /// All generated rows begin in the collapsed state.
+    ///
+    /// Make sure that the identifier of a data element only changes if you
+    /// mean to replace that element with a new element, one with a new
+    /// identity. If the ID of an element changes, then the content view
+    /// generated from that element will lose any current state and animations.
+    ///
+    /// - NOTE: All elements in data should be uniquely identified. Data with
+    /// elements that have a repeated identity are not supported.
+    ///
+    /// - Parameters:
+    ///   - data: A collection of tree-structured, identified data.
+    ///   - children: A key path to a property whose non-`nil` value gives the
+    ///     children of `data`. A non-`nil` but empty value denotes an element
+    ///     capable of having children that's currently childless, such as an
+    ///     empty directory in a file system. On the other hand, if the property
+    ///     at the key path is `nil`, then the outline view treats `data` as a
+    ///     leaf in the tree, like a regular file in a file system.
+    ///   - selection: A binding to a selected value.
+    ///   - separatorInsets: An optional closure that produces row separator lines
+    ///     with the given insets for each item in the outline view. If this closure
+    ///     is not provided (the default), separators are hidden.
+    ///   - content: A closure that produces an `NSView` to populate a row in the
+    ///     `OutlineView`. An `NStableCellView` subclass is preferred. The `NSView`
+    ///     should set the correct `fittingSize`, as it is used to determine the
+    ///     height of the cell. The closure provides an optional, reused instance
+    ///     of the `NSView` that can be configured and returned in order to avoid
+    ///     unnecessary initializations of new cell views.
+    @available(macOS 11.0, *)
+    init(
+        _ data: Data,
+        children: KeyPath<Data.Element, Data?>,
+        selection: Binding<Data.Element?>,
+        separatorInsets: ((Data.Element) -> NSEdgeInsets)? = nil,
+        content: @escaping (CellType?, Data.Element) -> CellType
+    ) {
+        self.data = data
+        self.childSource = .keyPath(children)
+        self._selection = selection
+        self.separatorInsets = separatorInsets
+        self.separatorVisibility = separatorInsets == nil ? .hidden : .visible
+        self.content = .reusable(content)
+    }
+
+    /// Creates an `OutlineView` from a collection of root data elements and
+    /// a closure that provides children to each element.
+    ///
+    /// This initializer creates an instance that uniquely identifies views
+    /// across updates based on the identity of the underlying data element.
+    ///
+    /// All generated rows begin in the collapsed state.
+    ///
+    /// Make sure that the identifier of a data element only changes if you
+    /// mean to replace that element with a new element, one with a new
+    /// identity. If the ID of an element changes, then the content view
+    /// generated from that element will lose any current state and animations.
+    ///
+    /// - NOTE: All elements in data should be uniquely identified. Data with
+    /// elements that have a repeated identity are not supported.
+    ///
+    /// - Parameters:
+    ///   - data: A collection of tree-structured, identified data.
+    ///   - selection: A binding to a selected value.
+    ///   - children: A closure whose non-`nil` return value gives the
+    ///     children of `data`. A non-`nil` but empty value denotes an element
+    ///     capable of having children that's currently childless, such as an
+    ///     empty directory in a file system. On the other hand, if the value
+    ///     from the closure is `nil`, then the outline view treats `data` as a
+    ///     leaf in the tree, like a regular file in a file system.
+    ///   - separatorInsets: An optional closure that produces row separator lines
+    ///     with the given insets for each item in the outline view. If this closure
+    ///     is not provided (the default), separators are hidden.
+    ///   - content: A closure that produces an `NSView` to populate a row in the
+    ///     `OutlineView`. An `NStableCellView` subclass is preferred. The `NSView`
+    ///     should set the correct `fittingSize`, as it is used to determine the
+    ///     height of the cell. The closure provides an optional, reused instance
+    ///     of the `NSView` that can be configured and returned in order to avoid
+    ///     unnecessary initializations of new cell views.
+    @available(macOS 11.0, *)
+    init(
+        _ data: Data,
+        selection: Binding<Data.Element?>,
+        children: @escaping (Data.Element) -> Data?,
+        separatorInsets: ((Data.Element) -> NSEdgeInsets)? = nil,
+        content: @escaping (CellType?, Data.Element) -> CellType
+    ) {
+        self.data = data
+        self._selection = selection
+        self.childSource = .provider(children)
+        self.separatorInsets = separatorInsets
+        self.separatorVisibility = separatorInsets == nil ? .hidden : .visible
+        self.content = .reusable(content)
+    }
+}
+
+// MARK: Initializers for macOS 11 and higher with no cell reuse, and NoDropReceiver.
+
+@available(macOS 11.0, *)
+public extension OutlineView where Drop == NoDropReceiver<Data.Element>, CellType == NSView {
     /// Creates an `OutlineView` from a collection of root data elements and
     /// a key path to its children.
     ///
@@ -470,7 +783,7 @@ public extension OutlineView where Drop == NoDropReceiver<Data.Element> {
         self._selection = selection
         self.separatorInsets = separatorInsets
         self.separatorVisibility = separatorInsets == nil ? .hidden : .visible
-        self.content = content
+        self.content = .singleUse(content)
     }
 
     /// Creates an `OutlineView` from a collection of root data elements and
@@ -517,6 +830,109 @@ public extension OutlineView where Drop == NoDropReceiver<Data.Element> {
         self.childSource = .provider(children)
         self.separatorInsets = separatorInsets
         self.separatorVisibility = separatorInsets == nil ? .hidden : .visible
-        self.content = content
+        self.content = .singleUse(content)
+    }
+}
+
+// MARK: Initializers for macOS 11 and higher with cell reuse, and NoDropReceiver.
+
+@available(macOS 11.0, *)
+public extension OutlineView where Drop == NoDropReceiver<Data.Element> {
+    /// Creates an `OutlineView` from a collection of root data elements and
+    /// a key path to its children.
+    ///
+    /// This initializer creates an instance that uniquely identifies views
+    /// across updates based on the identity of the underlying data element.
+    ///
+    /// All generated rows begin in the collapsed state.
+    ///
+    /// Make sure that the identifier of a data element only changes if you
+    /// mean to replace that element with a new element, one with a new
+    /// identity. If the ID of an element changes, then the content view
+    /// generated from that element will lose any current state and animations.
+    ///
+    /// - NOTE: All elements in data should be uniquely identified. Data with
+    /// elements that have a repeated identity are not supported.
+    ///
+    /// - Parameters:
+    ///   - data: A collection of tree-structured, identified data.
+    ///   - children: A key path to a property whose non-`nil` value gives the
+    ///     children of `data`. A non-`nil` but empty value denotes an element
+    ///     capable of having children that's currently childless, such as an
+    ///     empty directory in a file system. On the other hand, if the property
+    ///     at the key path is `nil`, then the outline view treats `data` as a
+    ///     leaf in the tree, like a regular file in a file system.
+    ///   - selection: A binding to a selected value.
+    ///   - separatorInsets: An optional closure that produces row separator lines
+    ///     with the given insets for each item in the outline view. If this closure
+    ///     is not provided (the default), separators are hidden.
+    ///   - content: A closure that produces an `NSView` to populate a row in the
+    ///     `OutlineView`. An `NStableCellView` subclass is preferred. The `NSView`
+    ///     should set the correct `fittingSize`, as it is used to determine the
+    ///     height of the cell. The closure provides an optional, reused instance
+    ///     of the `NSView` that can be configured and returned in order to avoid
+    ///     unnecessary initializations of new cell views.
+    init(
+        _ data: Data,
+        children: KeyPath<Data.Element, Data?>,
+        selection: Binding<Data.Element?>,
+        separatorInsets: ((Data.Element) -> NSEdgeInsets)? = nil,
+        content: @escaping (CellType?, Data.Element) -> CellType
+    ) {
+        self.data = data
+        self.childSource = .keyPath(children)
+        self._selection = selection
+        self.separatorInsets = separatorInsets
+        self.separatorVisibility = separatorInsets == nil ? .hidden : .visible
+        self.content = .reusable(content)
+    }
+
+    /// Creates an `OutlineView` from a collection of root data elements and
+    /// a closure that provides children to each element.
+    ///
+    /// This initializer creates an instance that uniquely identifies views
+    /// across updates based on the identity of the underlying data element.
+    ///
+    /// All generated rows begin in the collapsed state.
+    ///
+    /// Make sure that the identifier of a data element only changes if you
+    /// mean to replace that element with a new element, one with a new
+    /// identity. If the ID of an element changes, then the content view
+    /// generated from that element will lose any current state and animations.
+    ///
+    /// - NOTE: All elements in data should be uniquely identified. Data with
+    /// elements that have a repeated identity are not supported.
+    ///
+    /// - Parameters:
+    ///   - data: A collection of tree-structured, identified data.
+    ///   - selection: A binding to a selected value.
+    ///   - children: A closure whose non-`nil` return value gives the
+    ///     children of `data`. A non-`nil` but empty value denotes an element
+    ///     capable of having children that's currently childless, such as an
+    ///     empty directory in a file system. On the other hand, if the value
+    ///     from the closure is `nil`, then the outline view treats `data` as a
+    ///     leaf in the tree, like a regular file in a file system.
+    ///   - separatorInsets: An optional closure that produces row separator lines
+    ///     with the given insets for each item in the outline view. If this closure
+    ///     is not provided (the default), separators are hidden.
+    ///   - content: A closure that produces an `NSView` to populate a row in the
+    ///     `OutlineView`. An `NStableCellView` subclass is preferred. The `NSView`
+    ///     should set the correct `fittingSize`, as it is used to determine the
+    ///     height of the cell. The closure provides an optional, reused instance
+    ///     of the `NSView` that can be configured and returned in order to avoid
+    ///     unnecessary initializations of new cell views.
+    init(
+        _ data: Data,
+        selection: Binding<Data.Element?>,
+        children: @escaping (Data.Element) -> Data?,
+        separatorInsets: ((Data.Element) -> NSEdgeInsets)? = nil,
+        content: @escaping (CellType?, Data.Element) -> CellType
+    ) {
+        self.data = data
+        self._selection = selection
+        self.childSource = .provider(children)
+        self.separatorInsets = separatorInsets
+        self.separatorVisibility = separatorInsets == nil ? .hidden : .visible
+        self.content = .reusable(content)
     }
 }
