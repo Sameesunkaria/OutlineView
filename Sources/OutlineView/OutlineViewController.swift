@@ -1,4 +1,5 @@
 import Cocoa
+import Combine
 
 @available(macOS 10.15, *)
 public class OutlineViewController<Data: Sequence, Drop: DropReceiver>: NSViewController
@@ -6,9 +7,11 @@ where Drop.DataElement == Data.Element {
     let outlineView = NSOutlineView()
     let scrollView = NSScrollView(frame: NSRect(x: 0, y: 0, width: 400, height: 400))
     
+    var reloadID = UUID()
     let dataSource: OutlineViewDataSource<Data, Drop>
     let delegate: OutlineViewDelegate<Data>
     let updater = OutlineViewUpdater<Data>()
+    var reloadListener: AnyCancellable?
 
     let childrenSource: ChildSource<Data>
 
@@ -56,6 +59,17 @@ where Drop.DataElement == Data.Element {
             scrollView.topAnchor.constraint(equalTo: view.topAnchor),
             scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
+        
+        reloadListener = NotificationCenter
+            .default
+            .publisher(for: .OutlineViewReload)
+            .filter { [weak self] in
+                $0.outlineId == self?.reloadID
+            }
+            .sink { [weak self] note in
+                let itemIds = note.outlineItemIds(as: Data.Element.ID.self)
+                self?.reloadRowData(itemIds: itemIds)
+            }
     }
 
     required init?(coder: NSCoder) {
@@ -128,6 +142,39 @@ extension OutlineViewController {
         outlineView.gridColor = color
         outlineView.reloadData()
     }
+    
+    /// Calls `reloadData()` on the outlineView. Currently does not
+    /// use individual itemIds, although if implemented you could
+    /// reload individual rows. OutlineViewController and DataSource
+    /// would need to be changed in that case.
+    func reloadRowData(itemIds: [Data.Element.ID]?) {
+        // If no itemIds are given, reload everything
+        guard let itemIds,
+              !itemIds.isEmpty
+        else {
+            outlineView.reloadData()
+            return
+        }
+        
+        var itemsToReload = Set(itemIds)
+        let rowCount = outlineView.numberOfRows
+        var currentRow = 0
+        
+        // Reload individual rows while IDs are available
+        while currentRow < rowCount,
+              !itemsToReload.isEmpty
+        {
+            if let rowItem = outlineView.item(atRow: currentRow),
+               let identifiableItem = rowItem as? any Identifiable,
+               let itemId = identifiableItem.id as? Data.Element.ID,
+               itemsToReload.contains(itemId)
+            {
+                outlineView.reloadItem(rowItem, reloadChildren: outlineView.isItemExpanded(rowItem))
+                itemsToReload.remove(itemId)
+            }
+            currentRow += 1
+        }
+    }
         
     func setDragSourceWriter(_ writer: DragSourceWriter<Data.Element>?) {
         dataSource.dragWriter = writer
@@ -144,5 +191,9 @@ extension OutlineViewController {
         {
             outlineView.registerForDraggedTypes(acceptedTypes)
         }
+    }
+    
+    func setReloadID(_ newID: UUID) {
+        self.reloadID = newID
     }
 }

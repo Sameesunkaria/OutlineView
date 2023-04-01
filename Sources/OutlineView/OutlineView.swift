@@ -25,6 +25,7 @@ where Drop.DataElement == Data.Element {
     @Binding var selection: Data.Element?
     var content: (Data.Element) -> NSView
     var separatorInsets: ((Data.Element) -> NSEdgeInsets)?
+    var reloadID = UUID()
 
     /// Outline view style is unavailable on macOS 10.15 and below.
     /// Stored as `Any` to make the property available on all platforms.
@@ -75,6 +76,8 @@ where Drop.DataElement == Data.Element {
         outlineController.setDragSourceWriter(dragDataSource)
         outlineController.setDropReceiver(dropReceiver)
         outlineController.setAcceptedDragTypes(acceptedDropTypes)
+        
+        outlineController.setReloadID(reloadID)
     }
 }
 
@@ -139,6 +142,15 @@ public extension OutlineView {
     func dragDataSource(_ writer: @escaping DragSourceWriter<Data.Element>) -> Self {
         var mutableSelf = self
         mutableSelf.dragDataSource = writer
+        return mutableSelf
+    }
+    
+    /// Sets the unique reload identifier for the `OutlineView`, which can be
+    /// used to force data reloads using the static function
+    /// `triggerReloadOfOutlineView(id:itemIds:)`
+    func reloadIdentifier(_ reloadID: UUID) -> Self {
+        var mutableSelf = self
+        mutableSelf.reloadID = reloadID
         return mutableSelf
     }
 }

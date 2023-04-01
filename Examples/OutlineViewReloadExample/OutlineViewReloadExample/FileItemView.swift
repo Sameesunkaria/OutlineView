@@ -8,7 +8,7 @@
 import Cocoa
 
 class FileItemView: NSTableCellView {
-    init(fileItem: FileItem, textColor: NSColor = .textColor) {
+    init(fileItem: FileItem, textColor: NSColor) {
         let field = NSTextField(string: fileItem.description)
         field.isEditable = false
         field.isSelectable = false
@@ -18,7 +18,7 @@ class FileItemView: NSTableCellView {
         field.cell?.wraps = true
         field.cell?.isScrollable = false
         field.textColor = textColor
-
+        
         super.init(frame: .zero)
 
         addSubview(field)
