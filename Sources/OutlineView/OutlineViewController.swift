@@ -169,7 +169,7 @@ extension OutlineViewController {
                let itemId = identifiableItem.id as? Data.Element.ID,
                itemsToReload.contains(itemId)
             {
-                outlineView.reloadItem(rowItem)
+                outlineView.reloadItem(rowItem, reloadChildren: outlineView.isItemExpanded(rowItem))
                 itemsToReload.remove(itemId)
             }
             currentRow += 1
